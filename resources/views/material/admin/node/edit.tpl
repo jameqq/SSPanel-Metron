@@ -123,6 +123,9 @@
                                             <option value="12" {if $node->sort==12}selected{/if}>V2Ray 中转</option>
                                             <option value="13" {if $node->sort==13}selected{/if}>Shadowsocks V2Ray-Plugin&Obfs</option>
                                             <option value="14" {if $node->sort==14}selected{/if}>Trojan</option>
+                                            <option value="16" {if $node->sort==16}selected{/if}>Hysteria2</option>
+                                            <option value="17" {if $node->sort==17}selected{/if}>Tuic</option>
+                                            <option value="18" {if $node->sort==18}selected{/if}>AnyTLS</option>
                                         </select>
                                     </div>
                                 </div>
@@ -287,4 +290,3 @@
     });
 {/literal}
 </script>
-

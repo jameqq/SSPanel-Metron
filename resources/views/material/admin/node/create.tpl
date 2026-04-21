@@ -119,6 +119,9 @@
                                             <option value="12">V2Ray 中转</option>
                                             <option value="13">Shadowsocks V2Ray-Plugin&Obfs</option>
                                             <option value="14">Trojan</option>
+                                            <option value="16">Hysteria2</option>
+                                            <option value="17">Tuic</option>
+                                            <option value="18">AnyTLS</option>
                                         </select>
                                     </div>
                                 </div>
