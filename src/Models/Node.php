@@ -418,4 +418,60 @@ class Node extends Model
         }
         return $item;
     }
+
+    public function getHysteria2Item(User $user, bool $emoji = false): array
+    {
+        $server = explode(';', $this->server);
+        $opt = isset($server[1]) ? URL::parse_args($server[1]) : [];
+        return [
+            'remark' => ($emoji ? Tools::addEmoji($this->name) : $this->name),
+            'type' => 'hysteria2',
+            'address' => $server[0],
+            'port' => isset($opt['port']) ? (int) $opt['port'] : 443,
+            'passwd' => $user->getUuid(),
+            'sni' => isset($opt['sni']) ? $opt['sni'] : $server[0],
+            'alpn' => isset($opt['alpn']) ? explode(',', $opt['alpn']) : ['h3'],
+            'insecure' => isset($opt['insecure']) && (string) $opt['insecure'] === '1',
+            'obfs' => isset($opt['obfs']) ? $opt['obfs'] : '',
+            'obfs_password' => isset($opt['obfs_password']) ? $opt['obfs_password'] : '',
+            'up_mbps' => isset($opt['upmbps']) ? (int) $opt['upmbps'] : 50,
+            'down_mbps' => isset($opt['downmbps']) ? (int) $opt['downmbps'] : 200,
+        ];
+    }
+
+    public function getTuicItem(User $user, bool $emoji = false): array
+    {
+        $server = explode(';', $this->server);
+        $opt = isset($server[1]) ? URL::parse_args($server[1]) : [];
+        return [
+            'remark' => ($emoji ? Tools::addEmoji($this->name) : $this->name),
+            'type' => 'tuic',
+            'address' => $server[0],
+            'port' => isset($opt['port']) ? (int) $opt['port'] : 443,
+            'id' => $user->getUuid(),
+            'passwd' => $user->passwd,
+            'sni' => isset($opt['sni']) ? $opt['sni'] : $server[0],
+            'alpn' => isset($opt['alpn']) ? explode(',', $opt['alpn']) : ['h3'],
+            'insecure' => isset($opt['insecure']) && (string) $opt['insecure'] === '1',
+            'congestion_control' => isset($opt['congestion_control']) ? $opt['congestion_control'] : 'bbr',
+            'udp_relay_mode' => isset($opt['udp_relay_mode']) ? $opt['udp_relay_mode'] : 'native',
+            'zero_rtt_handshake' => isset($opt['zero_rtt_handshake']) && (string) $opt['zero_rtt_handshake'] === '1',
+        ];
+    }
+
+    public function getAnyTlsItem(User $user, bool $emoji = false): array
+    {
+        $server = explode(';', $this->server);
+        $opt = isset($server[1]) ? URL::parse_args($server[1]) : [];
+        return [
+            'remark' => ($emoji ? Tools::addEmoji($this->name) : $this->name),
+            'type' => 'anytls',
+            'address' => $server[0],
+            'port' => isset($opt['port']) ? (int) $opt['port'] : 443,
+            'passwd' => $user->getUuid(),
+            'sni' => isset($opt['sni']) ? $opt['sni'] : $server[0],
+            'alpn' => isset($opt['alpn']) ? explode(',', $opt['alpn']) : ['h2', 'http/1.1'],
+            'insecure' => isset($opt['insecure']) && (string) $opt['insecure'] === '1',
+        ];
+    }
 }
