@@ -242,6 +242,9 @@ class LinkController extends BaseController
                     3 => 'v2rayn',
                     4 => 'trojan',
                     5 => 'v2rayn',
+                    6 => 'v2rayn',
+                    7 => 'v2rayn',
+                    8 => 'v2rayn',
                 ];
                 $str = (!in_array($value, $strArray) ? $strArray[$value] : $strArray[1]);
                 $return = self::getSubscribeExtend($str);
@@ -461,6 +464,9 @@ class LinkController extends BaseController
             'v2ray' => '?sub=3',
             'trojan' => '?sub=4',
             'v2ray_vless' => '?sub=5',
+            'hysteria2' => '?sub=6',
+            'tuic' => '?sub=7',
+            'anytls' => '?sub=8',
             // apps
             'ssa' => '?list=ssa',
             'ssd' => '?ssd=1',
@@ -529,6 +535,11 @@ class LinkController extends BaseController
                 break;
             case 'trojan':
                 $return = AppURI::getTrojanURI($item);
+                break;
+            case 'hysteria2':
+            case 'tuic':
+            case 'anytls':
+                $return = AppURI::getV2RayNURI($item);
                 break;
             case 'kitsunebi':
                 $return = AppURI::getKitsunebiURI($item);
@@ -1004,6 +1015,12 @@ class LinkController extends BaseController
                 $return_url .= URL::get_NewAllUrl($user, $Rule);
                 $Rule['type'] = 'trojan';
                 $return_url .= URL::get_NewAllUrl($user, $Rule);
+                $Rule['type'] = 'hysteria2';
+                $return_url .= URL::get_NewAllUrl($user, $Rule);
+                $Rule['type'] = 'tuic';
+                $return_url .= URL::get_NewAllUrl($user, $Rule);
+                $Rule['type'] = 'anytls';
+                $return_url .= URL::get_NewAllUrl($user, $Rule);
                 $getListExtend = $Rule['extend'] ? self::getListExtend($user, 'v2rayn') : [];
                 break;
             case 4: // Trojan
@@ -1013,6 +1030,21 @@ class LinkController extends BaseController
                 break;
             case 5: // V2-VLESS
                 $Rule['type'] = 'vless';
+                $return_url .= URL::get_NewAllUrl($user, $Rule);
+                $getListExtend = $Rule['extend'] ? self::getListExtend($user, 'v2rayn') : [];
+                break;
+            case 6: // Hysteria2
+                $Rule['type'] = 'hysteria2';
+                $return_url .= URL::get_NewAllUrl($user, $Rule);
+                $getListExtend = $Rule['extend'] ? self::getListExtend($user, 'v2rayn') : [];
+                break;
+            case 7: // Tuic
+                $Rule['type'] = 'tuic';
+                $return_url .= URL::get_NewAllUrl($user, $Rule);
+                $getListExtend = $Rule['extend'] ? self::getListExtend($user, 'v2rayn') : [];
+                break;
+            case 8: // AnyTLS
+                $Rule['type'] = 'anytls';
                 $return_url .= URL::get_NewAllUrl($user, $Rule);
                 $getListExtend = $Rule['extend'] ? self::getListExtend($user, 'v2rayn') : [];
                 break;

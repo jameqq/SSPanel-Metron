@@ -403,6 +403,15 @@ class NodeController extends AdminController
                 case 15:
                     $sort = 'V2ray VLESS 节点';
                     break;
+                case 16:
+                    $sort = 'Hysteria2';
+                    break;
+                case 17:
+                    $sort = 'Tuic';
+                    break;
+                case 18:
+                    $sort = 'AnyTLS';
+                    break;
                 default:
                     $sort = '系统保留';
             }

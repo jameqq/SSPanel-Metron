@@ -91,10 +91,13 @@ public static function getV2RayNURI(array $item)
                 if ($item['host'] != "") $return .= "&host=" . rawurlencode($item['host']);
                 if ($item['host'] != "") $return .= "&sni=" . $item['host'];
                 if ($item['path'] != "") $return .= "&path=" . rawurlencode($item['path']);
+                if ($item['net'] == "xhttp" && isset($item['mode']) && $item['mode'] != "") {
+                    $return .= "&mode=" . rawurlencode($item['mode']);
+                }
                 if ($item['net'] == "grpc") $return .= "&mode=multi&serviceName=" . $item['servicename'];
                 else if ($item['headerType'] != "") $return .= "&headerType=" . $item['headerType'];
 
-                // ? ĞÂÔö ECH Ö§³Ö
+                // ? ï¿½ï¿½ï¿½ï¿½ ECH Ö§ï¿½ï¿½
                 if (isset($item['ech']) && $item['ech'] != "") {
                     $return .= "&ech=" . rawurlencode($item['ech']);
                 }
@@ -112,6 +115,7 @@ public static function getV2RayNURI(array $item)
                 $node .= '&sni=' . $item['host'];
             }
             if (isset($item['path']) && $item['path']) $node .= '&path=' . $item['path'];
+            if ($item['net'] == "xhttp" && isset($item['mode']) && $item['mode'] != "") $node .= '&mode=' . $item['mode'];
 
             if (isset($item['tls']) && $item['tls'] == "tls") {
                 if (isset($item['flow'])) $node .= '&flow=' . $item['flow'];
@@ -128,12 +132,53 @@ public static function getV2RayNURI(array $item)
             if ($item['net'] == "grpc") $node .= "&mode=multi&serviceName=" . $item['servicename'];
             else if ($item['headerType'] != "") $node .= "&headerType=" . $item['headerType'];
 
-            // ? ĞÂÔö ECH Ö§³Ö
+            // ? ï¿½ï¿½ï¿½ï¿½ ECH Ö§ï¿½ï¿½
             if (isset($item['ech']) && $item['ech'] != "") {
                 $node .= "&ech=" . rawurlencode($item['ech']);
             }
 
             $return = $node . '#' . rawurlencode($item['remark']);
+            break;
+        case 'hysteria2':
+            $query = [
+                'sni' => $item['sni'],
+                'insecure' => $item['insecure'] ? 1 : 0
+            ];
+            if (!empty($item['obfs'])) {
+                $query['obfs'] = $item['obfs'];
+            }
+            if (!empty($item['obfs_password'])) {
+                $query['obfs-password'] = $item['obfs_password'];
+            }
+            if (!empty($item['alpn'])) {
+                $query['alpn'] = implode(',', $item['alpn']);
+            }
+            $return = 'hysteria2://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . '?' . http_build_query($query) . '#' . rawurlencode($item['remark']);
+            break;
+        case 'tuic':
+            $query = [
+                'sni' => $item['sni'],
+                'congestion_control' => $item['congestion_control'],
+                'udp_relay_mode' => $item['udp_relay_mode'],
+                'allow_insecure' => $item['insecure'] ? 1 : 0
+            ];
+            if (!empty($item['alpn'])) {
+                $query['alpn'] = implode(',', $item['alpn']);
+            }
+            if (!empty($item['zero_rtt_handshake'])) {
+                $query['zero_rtt_handshake'] = 1;
+            }
+            $return = 'tuic://' . $item['id'] . ':' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . '?' . http_build_query($query) . '#' . rawurlencode($item['remark']);
+            break;
+        case 'anytls':
+            $query = [
+                'sni' => $item['sni'],
+                'insecure' => $item['insecure'] ? 1 : 0
+            ];
+            if (!empty($item['alpn'])) {
+                $query['alpn'] = implode(',', $item['alpn']);
+            }
+            $return = 'anytls://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . '?' . http_build_query($query) . '#' . rawurlencode($item['remark']);
             break;
     }
 
@@ -342,7 +387,7 @@ public static function getV2RayNURI(array $item)
             case 'ss':
                 $method = ['rc4-md5-6', 'camellia-128-cfb', 'camellia-192-cfb', 'camellia-256-cfb', 'bf-cfb', 'cast5-cfb', 'des-cfb', 'des-ede3-cfb', 'idea-cfb', 'rc2-cfb', 'seed-cfb', 'salsa20', 'chacha20', 'xsalsa20', 'none'];
                 if (in_array($item['method'], $method)) {
-                    // ä¸æ”¯æŒçš„
+                    // æ¶“å¶†æ•®é¸ä½ºæ®‘
                     break;
                 }
                 $return = [
@@ -406,7 +451,7 @@ public static function getV2RayNURI(array $item)
                     ||
                     in_array($item['protocol'], ['auth_chain_c', 'auth_chain_d', 'auth_chain_e', 'auth_chain_f', 'verify_deflate'])
                 ) {
-                    // ä¸æ”¯æŒçš„
+                    // æ¶“å¶†æ•®é¸ä½ºæ®‘
                     break;
                 }
                 $return = [
@@ -472,6 +517,51 @@ public static function getV2RayNURI(array $item)
                     $return['grpc-opts']['grpc-service-name'] = ($item['servicename'] != '' ? $item['servicename'] : "");
                 }
                 break;
+            case 'hysteria2':
+                $return = [
+                    'name' => $item['remark'],
+                    'type' => 'hysteria2',
+                    'server' => $item['address'],
+                    'port' => $item['port'],
+                    'password' => $item['passwd'],
+                    'sni' => $item['sni'],
+                    'alpn' => $item['alpn'],
+                    'up' => $item['up_mbps'],
+                    'down' => $item['down_mbps'],
+                    'skip-cert-verify' => $item['insecure']
+                ];
+                if (!empty($item['obfs'])) {
+                    $return['obfs'] = $item['obfs'];
+                    $return['obfs-password'] = $item['obfs_password'];
+                }
+                break;
+            case 'tuic':
+                $return = [
+                    'name' => $item['remark'],
+                    'type' => 'tuic',
+                    'server' => $item['address'],
+                    'port' => $item['port'],
+                    'uuid' => $item['id'],
+                    'password' => $item['passwd'],
+                    'sni' => $item['sni'],
+                    'alpn' => $item['alpn'],
+                    'udp' => true,
+                    'skip-cert-verify' => $item['insecure'],
+                    'congestion-controller' => $item['congestion_control']
+                ];
+                break;
+            case 'anytls':
+                $return = [
+                    'name' => $item['remark'],
+                    'type' => 'anytls',
+                    'server' => $item['address'],
+                    'port' => $item['port'],
+                    'password' => $item['passwd'],
+                    'sni' => $item['sni'],
+                    'alpn' => $item['alpn'],
+                    'skip-cert-verify' => $item['insecure']
+                ];
+                break;
         }
         return $return;
     }
@@ -483,7 +573,7 @@ public static function getV2RayNURI(array $item)
             case 'ss':
                 $method = ['rc4-md5-6', 'camellia-128-cfb', 'camellia-192-cfb', 'camellia-256-cfb', 'bf-cfb', 'cast5-cfb', 'des-cfb', 'des-ede3-cfb', 'idea-cfb', 'rc2-cfb', 'seed-cfb', 'salsa20', 'chacha20', 'xsalsa20', 'none'];
                 if (in_array($item['method'], $method)) {
-                    // ä¸æ”¯æŒçš„
+                    // æ¶“å¶†æ•®é¸ä½ºæ®‘
                     break;
                 }
                 $return = [
@@ -533,7 +623,7 @@ public static function getV2RayNURI(array $item)
                     ||
                     in_array($item['protocol'], ['auth_chain_c', 'auth_chain_d', 'auth_chain_e', 'auth_chain_f', 'verify_deflate'])
                 ) {
-                    // ä¸æ”¯æŒçš„
+                    // æ¶“å¶†æ•®é¸ä½ºæ®‘
                     break;
                 }
                 $return = [
@@ -586,7 +676,7 @@ public static function getV2RayNURI(array $item)
                 }
                 break;
             case 'vless':
-                if (!in_array($item['net'], array('ws', 'tcp', 'grpc'))) {
+                if (!in_array($item['net'], array('ws', 'tcp', 'grpc', 'xhttp'))) {
                     break;
                 }
                 $return = [
@@ -624,6 +714,17 @@ public static function getV2RayNURI(array $item)
                     $return['servername'] = ($item['host'] != '' ? $item['host'] : $item['add']);
                     $return['grpc-opts']['grpc-service-name'] = ($item['servicename'] != '' ? $item['servicename'] : "");
                 }
+                if ($item['net'] == 'xhttp') {
+                    $allowMode = ['auto', 'stream-one', 'stream-up', 'packet-up'];
+                    $mode = isset($item['mode']) && in_array($item['mode'], $allowMode) ? $item['mode'] : 'auto';
+                    $return['network'] = 'xhttp';
+                    $return['xhttp-opts']['path'] = ($item['path'] != '' ? $item['path'] : '/');
+                    $return['xhttp-opts']['host'] = ($item['host'] != '' ? $item['host'] : $item['add']);
+                    $return['xhttp-opts']['mode'] = $mode;
+                    if (isset($item['no_grpc_header'])) {
+                        $return['xhttp-opts']['no-grpc-header'] = in_array((string) $item['no_grpc_header'], ['1', 'true'], true);
+                    }
+                }
                 break;
             case 'trojan':
                 $return = [
@@ -638,6 +739,51 @@ public static function getV2RayNURI(array $item)
                     $return['network'] = 'grpc';
                     $return['grpc-opts']['grpc-service-name'] = ($item['servicename'] != '' ? $item['servicename'] : "");
                 }
+                break;
+            case 'hysteria2':
+                $return = [
+                    'name' => $item['remark'],
+                    'type' => 'hysteria2',
+                    'server' => $item['address'],
+                    'port' => $item['port'],
+                    'password' => $item['passwd'],
+                    'sni' => $item['sni'],
+                    'alpn' => $item['alpn'],
+                    'up' => $item['up_mbps'],
+                    'down' => $item['down_mbps'],
+                    'skip-cert-verify' => $item['insecure']
+                ];
+                if (!empty($item['obfs'])) {
+                    $return['obfs'] = $item['obfs'];
+                    $return['obfs-password'] = $item['obfs_password'];
+                }
+                break;
+            case 'tuic':
+                $return = [
+                    'name' => $item['remark'],
+                    'type' => 'tuic',
+                    'server' => $item['address'],
+                    'port' => $item['port'],
+                    'uuid' => $item['id'],
+                    'password' => $item['passwd'],
+                    'sni' => $item['sni'],
+                    'alpn' => $item['alpn'],
+                    'udp' => true,
+                    'skip-cert-verify' => $item['insecure'],
+                    'congestion-controller' => $item['congestion_control']
+                ];
+                break;
+            case 'anytls':
+                $return = [
+                    'name' => $item['remark'],
+                    'type' => 'anytls',
+                    'server' => $item['address'],
+                    'port' => $item['port'],
+                    'password' => $item['passwd'],
+                    'sni' => $item['sni'],
+                    'alpn' => $item['alpn'],
+                    'skip-cert-verify' => $item['insecure']
+                ];
                 break;
         }
         return $return;
@@ -898,24 +1044,24 @@ public static function getTrojanURI(array $item)
             if (!empty($item['servicename'])) {
                 $query['serviceName'] = $item['servicename'];
             } elseif (!empty($item['serviceName'])) {
-                // Èç¹ûÒÑ¾­ÓĞ serviceName£¬Ö±½ÓÊ¹ÓÃËü
+                // ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ serviceNameï¿½ï¿½Ö±ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½
                 $query['serviceName'] = $item['serviceName'];
             }            
-            // Èç¹û½ÚµãµØÖ·ÓĞ host£¬½« host Ìî³äµ½ sni
+            // ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½Ö·ï¿½ï¿½ hostï¿½ï¿½ï¿½ï¿½ host ï¿½ï¿½äµ½ sni
             if (!empty($item['host'])) {
                 $query['sni'] = $item['host'];
             }
             
-            // ÆäËû²éÑ¯²ÎÊı
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½
             if (!empty($item['net'])) $query['type'] = $item['net'];
             if (!empty($item['security'])) $query['security'] = $item['security'];
             if (!empty($item['path'])) $query['path'] = $item['path'];
             if (!empty($item['flow'])) $query['flow'] = $item['flow'];
             
-            // Éú³É²éÑ¯×Ö·û´®
+            // ï¿½ï¿½ï¿½É²ï¿½Ñ¯ï¿½Ö·ï¿½ï¿½ï¿½
             $q = http_build_query($query);
             
-            // ¹¹½¨×îÖÕµÄURI
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õµï¿½URI
             $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
             break;
     }
@@ -1035,11 +1181,67 @@ public static function getTrojanURI(array $item)
                 ];
                 if (in_array($item['net'], ["grpc", "ws"])) {
                     $return['network'] = $item['net'];
-                    // grpcé…ç½®
+            case 'hysteria2':
+                $return = [
+                    'tag' => $item['remark'],
+                    'type' => 'hysteria2',
+                    'server' => $item['address'],
+                    'server_port' => $item['port'],
+                    'password' => $item['passwd'],
+                    'up_mbps' => $item['up_mbps'],
+                    'down_mbps' => $item['down_mbps'],
+                    'tls' => [
+                        'enabled' => true,
+                        'server_name' => $item['sni'],
+                        'insecure' => $item['insecure']
+                    ]
+                ];
+                if (!empty($item['obfs'])) {
+                    $return['obfs'] = [
+                        'type' => $item['obfs'],
+                        'password' => $item['obfs_password']
+                    ];
+                }
+                break;
+            case 'tuic':
+                $return = [
+                    'tag' => $item['remark'],
+                    'type' => 'tuic',
+                    'server' => $item['address'],
+                    'server_port' => $item['port'],
+                    'uuid' => $item['id'],
+                    'password' => $item['passwd'],
+                    'congestion_control' => $item['congestion_control'],
+                    'udp_relay_mode' => $item['udp_relay_mode'],
+                    'zero_rtt_handshake' => $item['zero_rtt_handshake'],
+                    'tls' => [
+                        'enabled' => true,
+                        'server_name' => $item['sni'],
+                        'insecure' => $item['insecure'],
+                        'alpn' => $item['alpn']
+                    ]
+                ];
+                break;
+            case 'anytls':
+                $return = [
+                    'tag' => $item['remark'],
+                    'type' => 'anytls',
+                    'server' => $item['address'],
+                    'server_port' => $item['port'],
+                    'password' => $item['passwd'],
+                    'tls' => [
+                        'enabled' => true,
+                        'server_name' => $item['sni'],
+                        'insecure' => $item['insecure'],
+                        'alpn' => $item['alpn']
+                    ]
+                ];
+                break;
+                    // grpcé–°å¶‡ç–†
                     if($item['net'] === "grpc") {
                         $return['transport']['service_name'] = ($item['host'] != '' ? $item['host'] : $item['add']);
                     }
-                    // wsé…ç½®
+                    // wsé–°å¶‡ç–†
                     if($item['net'] === "ws") {
                         $return['transport']['max_early_data'] = 2048;
                         $return['transport']['path'] = $item['path'];
