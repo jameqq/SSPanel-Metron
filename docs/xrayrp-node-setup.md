@@ -105,3 +105,29 @@ anytls.example.com;port=443|sni=anytls.example.com|alpn=h2,http/1.1|insecure=0
 - `singbox`
 
 如要与 XrayRP 一致，请确保 XrayRP 端监听端口、证书、SNI、ALPN 与上面 `server` 参数一致。
+
+---
+
+## 7) ClashMeta xhttp 下发规范（mihomo）
+
+已按 mihomo 的 xhttp 结构补充 ClashMeta 订阅下发（仅 VLESS 网络类型）。
+
+当 VLESS 节点的 `net=xhttp` 时，会生成：
+
+```yaml
+network: xhttp
+xhttp-opts:
+  path: /xxx
+  host: example.com
+  mode: auto|stream-one|stream-up|packet-up
+```
+
+可选：
+
+- `no-grpc-header`（由 `no_grpc_header=1/true` 控制）
+
+服务端参数建议通过 VLESS 节点 `server` 扩展参数传入，例如：
+
+```text
+vless.example.com;443;0;xhttp;none;host=vless.example.com|path=/xhttp|mode=stream-up|sni=vless.example.com|security=tls
+```

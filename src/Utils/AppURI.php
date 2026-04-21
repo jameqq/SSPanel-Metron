@@ -91,6 +91,9 @@ public static function getV2RayNURI(array $item)
                 if ($item['host'] != "") $return .= "&host=" . rawurlencode($item['host']);
                 if ($item['host'] != "") $return .= "&sni=" . $item['host'];
                 if ($item['path'] != "") $return .= "&path=" . rawurlencode($item['path']);
+                if ($item['net'] == "xhttp" && isset($item['mode']) && $item['mode'] != "") {
+                    $return .= "&mode=" . rawurlencode($item['mode']);
+                }
                 if ($item['net'] == "grpc") $return .= "&mode=multi&serviceName=" . $item['servicename'];
                 else if ($item['headerType'] != "") $return .= "&headerType=" . $item['headerType'];
 
@@ -112,6 +115,7 @@ public static function getV2RayNURI(array $item)
                 $node .= '&sni=' . $item['host'];
             }
             if (isset($item['path']) && $item['path']) $node .= '&path=' . $item['path'];
+            if ($item['net'] == "xhttp" && isset($item['mode']) && $item['mode'] != "") $node .= '&mode=' . $item['mode'];
 
             if (isset($item['tls']) && $item['tls'] == "tls") {
                 if (isset($item['flow'])) $node .= '&flow=' . $item['flow'];
@@ -672,7 +676,7 @@ public static function getV2RayNURI(array $item)
                 }
                 break;
             case 'vless':
-                if (!in_array($item['net'], array('ws', 'tcp', 'grpc'))) {
+                if (!in_array($item['net'], array('ws', 'tcp', 'grpc', 'xhttp'))) {
                     break;
                 }
                 $return = [
@@ -709,6 +713,17 @@ public static function getV2RayNURI(array $item)
                     $return['network'] = 'grpc';
                     $return['servername'] = ($item['host'] != '' ? $item['host'] : $item['add']);
                     $return['grpc-opts']['grpc-service-name'] = ($item['servicename'] != '' ? $item['servicename'] : "");
+                }
+                if ($item['net'] == 'xhttp') {
+                    $allowMode = ['auto', 'stream-one', 'stream-up', 'packet-up'];
+                    $mode = isset($item['mode']) && in_array($item['mode'], $allowMode) ? $item['mode'] : 'auto';
+                    $return['network'] = 'xhttp';
+                    $return['xhttp-opts']['path'] = ($item['path'] != '' ? $item['path'] : '/');
+                    $return['xhttp-opts']['host'] = ($item['host'] != '' ? $item['host'] : $item['add']);
+                    $return['xhttp-opts']['mode'] = $mode;
+                    if (isset($item['no_grpc_header'])) {
+                        $return['xhttp-opts']['no-grpc-header'] = in_array((string) $item['no_grpc_header'], ['1', 'true'], true);
+                    }
                 }
                 break;
             case 'trojan':
