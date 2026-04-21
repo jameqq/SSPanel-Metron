@@ -27,7 +27,7 @@ It will not impact the appearance and can give developers a lot of support :)
         (function () {
             function perfops() {
                 var js = document.createElement('script');
-                js.src = 'https://cdn.jsdelivr.net/npm/perfops-rom';
+                js.src = 'https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js';
                 document.body.appendChild(js);
             }
 

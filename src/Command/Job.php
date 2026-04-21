@@ -42,14 +42,14 @@ class Job extends Command
 {
     public $description = ''
     . '├─=: php xcat Job [选项]' . PHP_EOL
-    . '│ ├─ UserGa                  - 二次验证' . PHP_EOL
-    . '│ ├─ DailyJob                - 每日任务' . PHP_EOL
-    . '│ ├─ CheckJob                - 检查任务，每分钟' . PHP_EOL
-    . '│ ├─ CheckUserClassExpire    - 检查用户会员等级过期任务，每分钟' . PHP_EOL
-    . '│ ├─ CheckUserExpire         - 检查账号过期任务，每小钟' . PHP_EOL
-    . '│ ├─ UserJob                 - 用户账户相关任务，每小时' . PHP_EOL
-    . '│ ├─ updatedownload          - 检查客户端更新' . PHP_EOL
-    . '│ ├─ SendMail                - 批量发送邮件' . PHP_EOL;
+    . '│\t├─ UserGa                  - 二次验证' . PHP_EOL
+    . '│\t├─ DailyJob                - 每日任务' . PHP_EOL
+    . '│\t├─ CheckJob                - 检查任务，每分钟' . PHP_EOL
+    . '│\t├─ CheckUserClassExpire    - 检查用户会员等级过期任务，每分钟' . PHP_EOL
+    . '│\t├─ CheckUserExpire         - 检查账号过期任务，每小钟' . PHP_EOL
+    . '│\t├─ UserJob                 - 用户账户相关任务，每小时' . PHP_EOL
+    . '│\t├─ updatedownload          - 检查客户端更新' . PHP_EOL
+    . '│\t├─ SendMail                - 批量发送邮件' . PHP_EOL;
 
     public function boot()
     {
@@ -96,7 +96,6 @@ class Job extends Command
         DetectLog::where('datetime', '<', time() - 86400 * 3)->delete();
         Speedtest::where('datetime', '<', time() - 86400 * 3)->delete();
         EmailVerify::where('expire_in', '<', time() - 86400 * 3)->delete();
-        //system('rm ' . BASE_PATH . '/storage/*.png', $ret);
         echo '清理其他日志成功;' . PHP_EOL;
 
         $db = new DatatablesHelper();
@@ -110,7 +109,7 @@ class Job extends Command
             Telegram::Send(Config::getconfig('Telegram.string.DailyJob'));
         }
 
-        //auto reset
+        // 用户流量自动重置
         $auto_reset_mode = MetronSetting::get('auto_reset_mode');
         echo '用户流量重置 模式：' . $auto_reset_mode . PHP_EOL;
         if ($auto_reset_mode === 'metron') {
@@ -131,45 +130,38 @@ class Job extends Command
                 continue;
             }
             if ($shop->reset() != 0 && $shop->reset_value() != 0 && $shop->reset_exp() != 0) {
+                // 如果今天是用户的 auto_reset_day，则跳过套餐重置逻辑
+                if ((int)date('d') === (int)$user->auto_reset_day) {
+                    continue;
+                }
                 $bought_users[] = $bought->userid;
                 if ($auto_reset_mode === 'metron') {
-                    if ($user->class > 0 && (int)((time() - $bought->datetime) / 86400) % $shop->reset() == 0 && (int)((time() - $bought->datetime) / 86400) != 0) {
-                        echo('用户ID:' . $user->id . ' 根据套餐ID:' . $shop->id . ' 重置流量为' . $shop->reset_value() . 'GB' . PHP_EOL);
+                    if ($user->class > 0
+                        && (int)((time() - $bought->datetime) / 86400) % $shop->reset() == 0
+                        && (int)((time() - $bought->datetime) / 86400) != 0
+                    ) {
+                        echo '用户ID:' . $user->id . ' 根据套餐ID:' . $shop->id . ' 重置流量为' . $shop->reset_value() . 'GB' . PHP_EOL;
                         $user->transfer_enable = Tools::toGB($shop->reset_value());
                         $user->u = 0;
                         $user->d = 0;
                         $user->last_day_t = 0;
                         $user->save();
-                        $user->sendMail(
-                            $_ENV['appName'] . '-您的流量被重置了',
-                            'news/warn.tpl',
-                            [
-                                'text' => '您好，根据您所订购的订单 ID:' . $bought->id . '，流量已经被重置为' . $shop->reset_value() . 'GB'
-                            ],
-                            [],
-                            $_ENV['email_queue']
-                        );
+                        // 不再发送邮件通知
                     }
                 } else if ($auto_reset_mode === 'sspanel') {
-                    if ((time() - $shop->reset_exp() * 86400 < $bought->datetime) && (int)((time() - $bought->datetime) / 86400) % $shop->reset() == 0 && (int)((time() - $bought->datetime) / 86400) != 0) {
-                        echo('流量重置-' . $user->id . "\n");
+                    if ((time() - $shop->reset_exp() * 86400 < $bought->datetime)
+                        && (int)((time() - $bought->datetime) / 86400) % $shop->reset() == 0
+                        && (int)((time() - $bought->datetime) / 86400) != 0
+                    ) {
+                        echo '流量重置-' . $user->id . "\n";
                         $user->transfer_enable = Tools::toGB($shop->reset_value());
                         $user->u = 0;
                         $user->d = 0;
                         $user->last_day_t = 0;
                         $user->save();
-                        $user->sendMail(
-                            $_ENV['appName'] . '-您的流量被重置了',
-                            'news/warn.tpl',
-                            [
-                                'text' => '您好，根据您所订购的订单 ID:' . $bought->id . '，流量已经被重置为' . $shop->reset_value() . 'GB'
-                            ],
-                            [],
-                            $_ENV['email_queue']
-                        );
+                        // 不再发送邮件通知
                     }
                 }
-
             }
         }
 
@@ -180,25 +172,18 @@ class Job extends Command
             if (in_array($user->id, $bought_users)) {
                 continue;
             }
-            if (date('d') == $user->auto_reset_day) {
+            // 用户级重置逻辑，优先于套餐重置
+            if ((int)date('d') === (int)$user->auto_reset_day) {
                 $user->u = 0;
                 $user->d = 0;
                 $user->last_day_t = 0;
                 $user->transfer_enable = $user->auto_reset_bandwidth * 1024 * 1024 * 1024;
                 $user->save();
-                $user->sendMail(
-                    $_ENV['appName'] . '-您的流量被重置了',
-                    'news/warn.tpl',
-                    [
-                        'text' => '您好，根据管理员的设置，流量已经被重置为' . $user->auto_reset_bandwidth . 'GB'
-                    ],
-                    [],
-                    $_ENV['email_queue']
-                );
+                // 不再发送邮件通知
             }
         }
         echo '重置用户流量成功;' . PHP_EOL;
-        
+
         $stream_opts = [
             "ssl" => [
                 "verify_peer"=>false,

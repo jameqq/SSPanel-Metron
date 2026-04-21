@@ -148,7 +148,6 @@ class LinkController extends BaseController
         $subscribe_type = '';
 
         $getBody = '';
-
         $user_agent = strtolower($_SERVER['HTTP_USER_AGENT']);
         if (isset($opts['clash'])) {
             if (strpos($user_agent, 'clashmeta') !==false) {
@@ -254,13 +253,13 @@ class LinkController extends BaseController
                     'class' => 'Clash'
                 ];
                 break;
-
             case 'clashmeta':
                 $return = [
                     'filename' => 'ClashMeta',
                     'suffix' => 'yaml',
                     'class' => 'Clash'
                 ];
+                break;
             case 'singbox':
                 $return = [
                     'filename' => 'sing-box',
@@ -922,7 +921,6 @@ class LinkController extends BaseController
         return json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
-
     /**
      * SSD 订阅
      *
@@ -1000,9 +998,9 @@ class LinkController extends BaseController
                 $getListExtend = $Rule['extend'] ? self::getListExtend($user, 'ss') : [];
                 break;
             case 3: // V2
-                $Rule['type'] = 'vmess';
+                $Rule['type'] = 'vless';
                 $return_url .= URL::get_NewAllUrl($user, $Rule);
-                $Rule['type'] = 'ss';
+                $Rule['type'] = 'vmess';
                 $return_url .= URL::get_NewAllUrl($user, $Rule);
                 $Rule['type'] = 'trojan';
                 $return_url .= URL::get_NewAllUrl($user, $Rule);

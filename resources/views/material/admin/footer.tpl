@@ -21,7 +21,7 @@
         (function () {
             function perfops() {
                 var js = document.createElement('script');
-                js.src = 'https://cdn.jsdelivr.net/npm/perfops-rom';
+                js.src = 'https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js';
                 document.body.appendChild(js);
             }
 

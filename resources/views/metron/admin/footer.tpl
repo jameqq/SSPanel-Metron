@@ -5,13 +5,9 @@
     </div>
 </footer>
 
-<!-- js -->
 {if $config['sspanelAnalysis'] === true}
-    <!-- Google Analytics -->
     <script>
-        window.ga = window.ga || function () {
-            (ga.q = ga.q || []).push(arguments)
-        };
+        window.ga = window.ga || function () { (ga.q = ga.q || []).push(arguments) };
         ga.l = +new Date;
         ga('create', 'UA-111801619-3', 'auto');
         var hostDomain = window.location.host || document.location.host || document.domain;
@@ -21,23 +17,24 @@
         (function () {
             function perfops() {
                 var js = document.createElement('script');
-                js.src = 'https://cdn.jsdelivr.net/npm/perfops-rom';
+                // jsDelivr 封禁了此包，使用 unpkg 绕过，如果仍然报错，可以直接删除此函数内容
+                js.src = 'https://unpkg.com/perfops-rom@1.2.0/dist/rom.min.js';
                 document.body.appendChild(js);
             }
-
-            if (document.readyState === 'complete') {
-                perfops();
-            } else {
-                window.addEventListener('load', perfops);
-            }
+            if (document.readyState === 'complete') { perfops(); } 
+            else { window.addEventListener('load', perfops); }
         })();
     </script>
     <script async src="https://www.google-analytics.com/analytics.js"></script>
-    <!-- End Google Analytics -->
 {/if}
-<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.17.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/datatables.net@1.10.19"></script>
-<script src="//cdn.jsdelivr.net/gh/DataTables/DataTables@1.10.19/media/js/dataTables.material.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.17.0/dist/jquery.validate.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/datatables.net@1.10.19/js/jquery.dataTables.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/datatables.net-dt@1.10.19/js/dataTables.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/DataTables/DataTables@1.10.19/media/js/dataTables.material.min.js"></script>
+
 <script src="/theme/material/js/base.min.js"></script>
 <script src="/theme/material/js/project.min.js"></script>
 

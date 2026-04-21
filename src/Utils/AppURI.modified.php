@@ -51,94 +51,91 @@ class AppURI
         return $ssurl;
     }
 
-public static function getV2RayNURI(array $item)
-{
-    $return = null;
-    switch ($item['type']) {
-        case 'vmess':
-            if (isset($item['vtype']) && (string)$item['vtype'] == "vmess://") {
-                $node = [
-                    'v' => "2",
-                    'ps' => $item['remark'],
-                    'add' => $item['add'],
-                    'port' => (string)$item['port'],
-                    'id' => $item['id'],
-                    'aid' => (string)$item['aid'],
-                    'net' => $item['net'],
-                    'type' => $item['net'] == 'grpc' ? "multi" : $item['headerType'],
-                    'host' => $item['net'] == 'grpc' ? '' : $item['host'],
-                    'path' => $item['net'] == 'grpc' ? $item['servicename'] : $item['path'],
-                    'tls' => $item['tls'],
-                    'sni' => $item['sni']
-                ];
-                $return = 'vmess://' . base64_encode(json_encode($node, 320));
-            } else {
-                $return = 'vless://' . $item['id'] . "@" . (string)$item['add'] . ":" . $item['port'] . "?encryption=none";
-                $return .= "&type=" . $item['net'];
-
-                if ($item['tls'] == "tls") {
-                    if (isset($item['flow'])) $return .= "&flow=" . $item['flow'];
-                    if (isset($item['security']) && $item['security'] == "reality") {
-                        $return .= "&security=" . $item['security'];
-                        if (isset($item['publicKey'])) $return .= "&pbk=" . $item['publicKey'];
-                        if (isset($item['shortId'])) $return .= "&sid=" . $item['shortId'];
-                    } else {
-                        $return .= "&security=" . $item['tls'];
-                    }
-                    $return .= "&fp=chrome";
-                }
-
-                if ($item['host'] != "") $return .= "&host=" . rawurlencode($item['host']);
-                if ($item['host'] != "") $return .= "&sni=" . $item['host'];
-                if ($item['path'] != "") $return .= "&path=" . rawurlencode($item['path']);
-                if ($item['net'] == "grpc") $return .= "&mode=multi&serviceName=" . $item['servicename'];
-                else if ($item['headerType'] != "") $return .= "&headerType=" . $item['headerType'];
-
-                // ? 新增 ECH 支持
-                if (isset($item['ech']) && $item['ech'] != "") {
-                    $return .= "&ech=" . rawurlencode($item['ech']);
-                }
-
-                if ($item['remark'] != "") $return .= "#" . rawurlencode($item['remark']);
-            }
-            break;
-
-        case 'vless':
-            $node = 'vless://' . $item['id'] . '@' . $item['add'] . ':' . $item['port']
-                . '?encryption=none&type=' . $item['net'] . '&headerType=none';
-
-            if (isset($item['host']) && $item['host']) {
-                $node .= '&host=' . $item['host'];
-                $node .= '&sni=' . $item['host'];
-            }
-            if (isset($item['path']) && $item['path']) $node .= '&path=' . $item['path'];
-
-            if (isset($item['tls']) && $item['tls'] == "tls") {
-                if (isset($item['flow'])) $node .= '&flow=' . $item['flow'];
-                if (isset($item['security']) && $item['security'] == "reality") {
-                    $node .= "&security=" . $item['security'];
-                    if (isset($item['publicKey'])) $node .= "&pbk=" . $item['publicKey'];
-                    if (isset($item['shortId'])) $node .= "&sid=" . $item['shortId'];
+    public static function getV2RayNURI(array $item)
+    {
+        $return = null;
+        switch ($item['type']) {
+            case 'vmess':
+                if (isset($item['vtype']) && (string)$item['vtype'] == "vmess://") {
+                    $node = [
+                        'v' => "2",
+                        'ps' => $item['remark'],
+                        'add' => $item['add'],
+                        'port' => (string)$item['port'],
+                        'id' => $item['id'],
+                        'aid' => (string)$item['aid'],
+                        'net' => $item['net'],
+                        'type' => $item['net'] == 'grpc' ? "multi" : $item['headerType'],
+                        'host' => $item['net'] == 'grpc' ? '' : $item['host'],
+                        'path' => $item['net'] == 'grpc' ? $item['servicename'] : $item['path'],
+                        'tls' => $item['tls'],
+                        'sni' => $item['sni']
+                    ];
+                    $return = ('vmess://' . base64_encode(
+                            json_encode($node, 320)
+                        ));
                 } else {
-                    $node .= "&security=" . $item['tls'];
+                    $return = 'vless://' . $item['id'] . "@" . (string)$item['add'] . ":" . $item['port'] . "?encryption=none";
+                    $return .= "&type=" . $item['net'];
+                    $return .= "&security=" . $item['tls'];
+                    if ($item['tls'] == "xtls") {
+                        $return .= "&flow=" . $item['flow'];
+                    }
+                    if ($item['host'] != "") $return = $return . "&host=" . rawurlencode($item['host']);
+                    if ($item['host'] != "") $return = $return . "&sni=" . $item['host'];
+                    if ($item['path'] != "") $return = $return . "&path=" . rawurlencode($item['path']);
+                    if ($item['net'] == "grpc") {
+                        if ($item['net'] == "grpc") $return = $return . "&mode=multi&serviceName=" . $item['servicename'];
+                    } else {
+                        if ($item['headerType'] != "") $return = $return . "&headerType=" . $item['headerType'];
+                    }
+                    if ($item['remark'] != "") $return = $return . "#" . rawurlencode($item['remark']);
                 }
-                $node .= "&fp=chrome";
-            }
+                break;
+            case 'vless':
+                $node = 'vless://' . $item['id'] . '@' . $item['add'] . ':' . $item['port']
+                    . '?encryption=none&type=' . $item['net'] . '&headerType=none';
+                if (isset($item['host']) && $item['host']) {
+                    $node .= '&host=' . $item['host'];
+                }
+                if (isset($item['path']) && $item['path']) {
+                    $node .= '&path=' . $item['path'];
+                }
+                if (isset($item['security']) && $item['security']) {
+                    $node .= '&security=' . $item['security'];
+                }
+                if (isset($item['flow']) && $item['flow']) {
+                    $node .= '&flow=' . $item['flow'];
+                }
+                if ($item['net'] == "grpc") {
+                    $node .= "&mode=multi&serviceName=" . $item['servicename'];
+                } else {
+                    if ($item['headerType'] != "") $node .= "&headerType=" . $item['headerType'];
+                }
+                $return = $node . '#' . $item['remark'];
+                break;
+            
+            case 'trojan':
+                $query = [];
+                if (!empty($item['net'])) $query['type'] = $item['net'];
+                if (!empty($item['servicename'])) $query['serviceName'] = $item['servicename'];
+                if (!empty($item['security'])) $query['security'] = $item['security'];
+                if (!empty($item['reality_public_key'])) $query['pbk'] = $item['reality_public_key'];
+                if (!empty($item['reality_short_id'])) $query['sid'] = $item['reality_short_id'];
+                if (!empty($item['sni'])) $query['sni'] = $item['sni'];
+                if (!empty($item['host'])) $query['host'] = $item['host'];
+                if (!empty($item['path'])) $query['path'] = $item['path'];
+                if (!empty($item['flow'])) $query['flow'] = $item['flow'];
+                $q = http_build_query($query);
+                $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
+                break;
 
-            if ($item['net'] == "grpc") $node .= "&mode=multi&serviceName=" . $item['servicename'];
-            else if ($item['headerType'] != "") $node .= "&headerType=" . $item['headerType'];
-
-            // ? 新增 ECH 支持
-            if (isset($item['ech']) && $item['ech'] != "") {
-                $node .= "&ech=" . rawurlencode($item['ech']);
-            }
-
-            $return = $node . '#' . rawurlencode($item['remark']);
-            break;
+            case 'ss':
+                $return = self::getItemUrl($item, 2);
+                break;
+        }
+        return $return;
     }
-
-    return $return;
-}
 
 
     public static function getSurgeURI(array $item, int $version)
@@ -171,9 +168,22 @@ public static function getV2RayNURI(array $item)
                             : '');
                         $return = $item['remark'] . ' = vmess, ' . $item['add'] . ', ' . $item['port'] . ', username = ' . $item['id'] . $ws . $tls . $sni;
                         break;
-                    case 'trojan':
-                        $return = ($item['remark'] . ' = trojan, ' . $item['address'] . ', ' . $item['port'] . ', password=' . $item['passwd']) . ", sni=" . $item['host'];
-                        break;
+                    
+            case 'trojan':
+                $query = [];
+                if (!empty($item['net'])) $query['type'] = $item['net'];
+                if (!empty($item['servicename'])) $query['serviceName'] = $item['servicename'];
+                if (!empty($item['security'])) $query['security'] = $item['security'];
+                if (!empty($item['reality_public_key'])) $query['pbk'] = $item['reality_public_key'];
+                if (!empty($item['reality_short_id'])) $query['sid'] = $item['reality_short_id'];
+                if (!empty($item['sni'])) $query['sni'] = $item['sni'];
+                if (!empty($item['host'])) $query['host'] = $item['host'];
+                if (!empty($item['path'])) $query['path'] = $item['path'];
+                if (!empty($item['flow'])) $query['flow'] = $item['flow'];
+                $q = http_build_query($query);
+                $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
+                break;
+
                 }
                 break;
         }
@@ -328,9 +338,22 @@ public static function getV2RayNURI(array $item)
                     }
                 }
                 break;
+            
             case 'trojan':
-                $return = $item['remark'] . ' = trojan,' . $item['address'] . ', ' . $item['port'] . ', password=' . $item['passwd'] . ',sni=' . $item['host'];
+                $query = [];
+                if (!empty($item['net'])) $query['type'] = $item['net'];
+                if (!empty($item['servicename'])) $query['serviceName'] = $item['servicename'];
+                if (!empty($item['security'])) $query['security'] = $item['security'];
+                if (!empty($item['reality_public_key'])) $query['pbk'] = $item['reality_public_key'];
+                if (!empty($item['reality_short_id'])) $query['sid'] = $item['reality_short_id'];
+                if (!empty($item['sni'])) $query['sni'] = $item['sni'];
+                if (!empty($item['host'])) $query['host'] = $item['host'];
+                if (!empty($item['path'])) $query['path'] = $item['path'];
+                if (!empty($item['flow'])) $query['flow'] = $item['flow'];
+                $q = http_build_query($query);
+                $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
                 break;
+
         }
         return $return;
     }
@@ -458,187 +481,22 @@ public static function getV2RayNURI(array $item)
                     $return['grpc-opts']['grpc-service-name'] = ($item['servicename'] != '' ? $item['servicename'] : "");
                 }
                 break;
+            
             case 'trojan':
-                $return = [
-                    'name' => $item['remark'],
-                    'type' => 'trojan',
-                    'server' => $item['address'],
-                    'port' => $item['port'],
-                    'password' => $item['passwd'],
-                    'sni' => $item['host']
-                ];
-                if ($item['net'] == 'grpc') {
-                    $return['network'] = 'grpc';
-                    $return['grpc-opts']['grpc-service-name'] = ($item['servicename'] != '' ? $item['servicename'] : "");
-                }
+                $query = [];
+                if (!empty($item['net'])) $query['type'] = $item['net'];
+                if (!empty($item['servicename'])) $query['serviceName'] = $item['servicename'];
+                if (!empty($item['security'])) $query['security'] = $item['security'];
+                if (!empty($item['reality_public_key'])) $query['pbk'] = $item['reality_public_key'];
+                if (!empty($item['reality_short_id'])) $query['sid'] = $item['reality_short_id'];
+                if (!empty($item['sni'])) $query['sni'] = $item['sni'];
+                if (!empty($item['host'])) $query['host'] = $item['host'];
+                if (!empty($item['path'])) $query['path'] = $item['path'];
+                if (!empty($item['flow'])) $query['flow'] = $item['flow'];
+                $q = http_build_query($query);
+                $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
                 break;
-        }
-        return $return;
-    }
 
-    public static function getClashMetaURI(array $item)
-    {
-        $return = null;
-        switch ($item['type']) {
-            case 'ss':
-                $method = ['rc4-md5-6', 'camellia-128-cfb', 'camellia-192-cfb', 'camellia-256-cfb', 'bf-cfb', 'cast5-cfb', 'des-cfb', 'des-ede3-cfb', 'idea-cfb', 'rc2-cfb', 'seed-cfb', 'salsa20', 'chacha20', 'xsalsa20', 'none'];
-                if (in_array($item['method'], $method)) {
-                    // 涓嶆敮鎸佺殑
-                    break;
-                }
-                $return = [
-                    'name' => $item['remark'],
-                    'type' => 'ss',
-                    'server' => $item['address'],
-                    'port' => $item['port'],
-                    'cipher' => $item['method'],
-                    'password' => $item['passwd'],
-                    'udp' => true
-                ];
-                if ($item['obfs'] != 'plain') {
-                    switch ($item['obfs']) {
-                        case 'simple_obfs_http':
-                            $return['plugin'] = 'obfs';
-                            $return['plugin-opts']['mode'] = 'http';
-                            break;
-                        case 'simple_obfs_tls':
-                            $return['plugin'] = 'obfs';
-                            $return['plugin-opts']['mode'] = 'tls';
-                            break;
-                        case 'v2ray':
-                            $return['plugin'] = 'v2ray-plugin';
-                            $return['plugin-opts']['mode'] = 'websocket';
-                            if ($item['tls'] == 'tls') {
-                                $return['plugin-opts']['tls'] = true;
-                                if ($item['verify_cert'] == false) {
-                                    $return['plugin-opts']['skip-cert-verify'] = true;
-                                }
-                            }
-                            $return['plugin-opts']['host'] = $item['host'];
-                            $return['plugin-opts']['path'] = $item['path'];
-                            break;
-                    }
-                    if ($item['obfs'] != 'v2ray') {
-                        if ($item['obfs_param'] != '') {
-                            $return['plugin-opts']['host'] = $item['obfs_param'];
-                        } else {
-                            $return['plugin-opts']['host'] = 'windowsupdate.windows.com';
-                        }
-                    }
-                }
-                break;
-            case 'ssr':
-                if (
-                    in_array($item['method'], ['chacha20', 'camellia-128-cfb', 'camellia-192-cfb', 'camellia-256-cfb', 'rc4-md5-6', 'bf-cfb', 'cast5-cfb', 'des-cfb', 'des-ede3-cfb', 'idea-cfb', 'rc2-cfb', 'seed-cfb', 'salsa20', 'xsalsa20', 'none'])
-                    ||
-                    in_array($item['protocol'], ['auth_chain_c', 'auth_chain_d', 'auth_chain_e', 'auth_chain_f', 'verify_deflate'])
-                ) {
-                    // 涓嶆敮鎸佺殑
-                    break;
-                }
-                $return = [
-                    'name' => $item['remark'],
-                    'type' => 'ssr',
-                    'server' => "{$item['address']}",
-                    'port' => $item['port'],
-                    'cipher' => $item['method'],
-                    'password' => $item['passwd'],
-                    'protocol' => $item['protocol'],
-                    'protocol-param' => $item['protocol_param'],
-                    'obfs' => $item['obfs'],
-                    'obfs-param' => $item['obfs_param']
-                ];
-                break;
-            case 'vmess':
-                if (!in_array($item['net'], array('ws', 'tcp', 'grpc'))) {
-                    break;
-                }
-                $return = [
-                    'name' => $item['remark'],
-                    'type' => 'vmess',
-                    'server' => $item['add'],
-                    'port' => $item['port'],
-                    'uuid' => $item['id'],
-                    'alterId' => $item['aid'],
-                    'cipher' => 'auto',
-                    'udp' => true
-                ];
-                if ($item['sni']) {
-                    $return['servername'] = $item['sni'];
-                }
-                if ($item['net'] == 'ws') {
-                    $return['network'] = 'ws';
-                    $return['ws-path'] = $item['path'];
-                    $return['ws-headers']['Host'] = ($item['host'] != '' ? $item['host'] : $item['add']);
-                    $return['ws-opts']['path'] = $item['path'];
-                    $return['ws-opts']['headers']['Host'] = ($item['host'] != '' ? $item['host'] : $item['add']);
-                }
-                if ($item['tls'] == 'tls') {
-                    $return['tls'] = true;
-                    if ($item['verify_cert'] == false) {
-                        $return['skip-cert-verify'] = true;
-                    }
-                }
-                if ($item['net'] == 'grpc') {
-                    $return['network'] = 'grpc';
-                    $return['servername'] = ($item['host'] != '' ? $item['host'] : $item['add']);
-                    $return['grpc-opts']['grpc-service-name'] = ($item['servicename'] != '' ? $item['servicename'] : "");
-                }
-                break;
-            case 'vless':
-                if (!in_array($item['net'], array('ws', 'tcp', 'grpc'))) {
-                    break;
-                }
-                $return = [
-                    'name' => $item['remark'],
-                    'type' => 'vless',
-                    'server' => $item['add'],
-                    'port' => $item['port'],
-                    'uuid' => $item['id'],
-                    'flow' => $item['flow'],
-                    'client-fingerprint' => 'chrome',
-                    'udp' => true
-                ];
-
-                if ($item['tls'] == 'tls') {
-                    $return['tls'] = true;
-                    $return['servername'] = isset($item['sni']) ? $item['sni'] : $item['host'];
-                    if(isset($item['security']) && $item['security'] == "reality") {
-                        $return['reality-opts'] = [];
-                        $return['reality-opts']['public-key'] = isset($item['publicKey']) ? $item['publicKey'] : "";
-                        $return['reality-opts']['short-id'] = isset($item['shortId']) ? $item['shortId'] : "";
-                    }
-                }
-                if ($item['net'] == 'tcp') {
-                    $return['network'] = 'tcp';
-                }
-                if ($item['net'] == 'ws') {
-                    $return['network'] = 'ws';
-                    $return['ws-path'] = $item['path'];
-                    $return['ws-headers']['Host'] = ($item['host'] != '' ? $item['host'] : $item['add']);
-                    $return['ws-opts']['path'] = $item['path'];
-                    $return['ws-opts']['headers']['Host'] = ($item['host'] != '' ? $item['host'] : $item['add']);
-                }
-                if ($item['net'] == 'grpc') {
-                    $return['network'] = 'grpc';
-                    $return['servername'] = ($item['host'] != '' ? $item['host'] : $item['add']);
-                    $return['grpc-opts']['grpc-service-name'] = ($item['servicename'] != '' ? $item['servicename'] : "");
-                }
-                break;
-            case 'trojan':
-                $return = [
-                    'name' => $item['remark'],
-                    'type' => 'trojan',
-                    'server' => $item['address'],
-                    'port' => $item['port'],
-                    'password' => $item['passwd'],
-                    'sni' => $item['host']
-                ];
-                if ($item['net'] == 'grpc') {
-                    $return['network'] = 'grpc';
-                    $return['grpc-opts']['grpc-service-name'] = ($item['servicename'] != '' ? $item['servicename'] : "");
-                }
-                break;
         }
         return $return;
     }
@@ -712,43 +570,23 @@ public static function getV2RayNURI(array $item)
                         : ('&peer=' . $item['host']));
                 }
                 $return = ('vmess://' . Tools::base64_url_encode('chacha20-poly1305:' . $item['id'] . '@' . $item['add'] . ':' . $item['port']) . '?remarks=' . rawurlencode($item['remark']) . $obfs . $tls . '&alterId=' . $item['aid']);
-		break;
-
-            case 'vless':
-                $node = 'vless://' . $item['id'] . '@' . $item['add'] . ':' . $item['port']
-                    . '?encryption=none&type=' . $item['net'] . '&headerType=none';
-                if (isset($item['host']) && $item['host']) {
-                    $node .= '&host=' . $item['host'];
-                    $node .= '&sni=' . $item['host'];
-                }
-                if (isset($item['path']) && $item['path']) {
-                    $node .= '&path=' . $item['path'];
-                }
-                if (isset($item['tls']) && $item['tls'] == "tls") {
-                    if (isset($item['flow'])) $node .= '&flow=' . $item['flow'];
-                    if (isset($item['security']) && $item['security'] == "reality") {
-                        $node .= "&security=" . $item['security'];
-                        if (isset($item['publicKey'])) $node .="&pbk=" . $item['publicKey'];
-                        if (isset($item['shortId'])) $node .="&sid=" . $item['shortId'];
-                    } else {
-                        $node .= "&security=" . $item['tls'];
-                    }
-                    $node .= "&fp=safari";
-                }
-
-                if ($item['net'] == "grpc") {
-                    $node .= "&mode=multi&serviceName=" . $item['servicename'];
-                } else {
-                    if ($item['headerType'] != "") $node .= "&headerType=" . $item['headerType'];
-                }
-
-                $return = $node . '#' . $item['remark'];
+                break;
+            
+            case 'trojan':
+                $query = [];
+                if (!empty($item['net'])) $query['type'] = $item['net'];
+                if (!empty($item['servicename'])) $query['serviceName'] = $item['servicename'];
+                if (!empty($item['security'])) $query['security'] = $item['security'];
+                if (!empty($item['reality_public_key'])) $query['pbk'] = $item['reality_public_key'];
+                if (!empty($item['reality_short_id'])) $query['sid'] = $item['reality_short_id'];
+                if (!empty($item['sni'])) $query['sni'] = $item['sni'];
+                if (!empty($item['host'])) $query['host'] = $item['host'];
+                if (!empty($item['path'])) $query['path'] = $item['path'];
+                if (!empty($item['flow'])) $query['flow'] = $item['flow'];
+                $q = http_build_query($query);
+                $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
                 break;
 
-	    case 'trojan':
-                $return = ('trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port']);
-                $return .= ('?peer=' . $item['host'] . '#' . rawurlencode($item['remark']));
-                break;
         }
         return $return;
     }
@@ -887,40 +725,30 @@ public static function getV2RayNURI(array $item)
         return $return;
     }
 
-public static function getTrojanURI(array $item)
-{
-    $return = null;
-    switch ($item['type']) {
-        
-        case 'trojan':
-            $query = [];
+    public static function getTrojanURI(array $item)
+    {
+        $return = null;
+        switch ($item['type']) {
             
-            if (!empty($item['servicename'])) {
-                $query['serviceName'] = $item['servicename'];
-            } elseif (!empty($item['serviceName'])) {
-                // 如果已经有 serviceName，直接使用它
-                $query['serviceName'] = $item['serviceName'];
-            }            
-            // 如果节点地址有 host，将 host 填充到 sni
-            if (!empty($item['host'])) {
-                $query['sni'] = $item['host'];
-            }
-            
-            // 其他查询参数
-            if (!empty($item['net'])) $query['type'] = $item['net'];
-            if (!empty($item['security'])) $query['security'] = $item['security'];
-            if (!empty($item['path'])) $query['path'] = $item['path'];
-            if (!empty($item['flow'])) $query['flow'] = $item['flow'];
-            
-            // 生成查询字符串
-            $q = http_build_query($query);
-            
-            // 构建最终的URI
-            $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
-            break;
+            case 'trojan':
+                $query = [];
+                if (!empty($item['net'])) $query['type'] = $item['net'];
+                if (!empty($item['servicename'])) $query['serviceName'] = $item['servicename'];
+                if (!empty($item['security'])) $query['security'] = $item['security'];
+                if (!empty($item['reality_public_key'])) $query['pbk'] = $item['reality_public_key'];
+                if (!empty($item['reality_short_id'])) $query['sid'] = $item['reality_short_id'];
+                if (!empty($item['sni'])) $query['sni'] = $item['sni'];
+                if (!empty($item['host'])) $query['host'] = $item['host'];
+                if (!empty($item['path'])) $query['path'] = $item['path'];
+                if (!empty($item['flow'])) $query['flow'] = $item['flow'];
+                $q = http_build_query($query);
+                $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
+                break;
+
+        }
+        return $return;
     }
-    return $return;
-}
+
     public static function getAnXrayURI(array $item)
     {
         $return = null;
@@ -955,14 +783,22 @@ public static function getTrojanURI(array $item)
                 }
                 if ($item['remark'] != "") $return = $return . "#" . rawurlencode($item['remark']);
                 break;
+            
             case 'trojan':
-                $return = ('trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port']);
-                $return .= ('?peer=' . $item['host'] . '&sni=' . $item['host']);
-                if ($item['tls'] == "xtls") {
-                    $return .= ("&security=" . $item['tls'] . "&flow=" . $item['flow']);
-                }
-                $return .= ('#' . rawurlencode($item['remark']));
+                $query = [];
+                if (!empty($item['net'])) $query['type'] = $item['net'];
+                if (!empty($item['servicename'])) $query['serviceName'] = $item['servicename'];
+                if (!empty($item['security'])) $query['security'] = $item['security'];
+                if (!empty($item['reality_public_key'])) $query['pbk'] = $item['reality_public_key'];
+                if (!empty($item['reality_short_id'])) $query['sid'] = $item['reality_short_id'];
+                if (!empty($item['sni'])) $query['sni'] = $item['sni'];
+                if (!empty($item['host'])) $query['host'] = $item['host'];
+                if (!empty($item['path'])) $query['path'] = $item['path'];
+                if (!empty($item['flow'])) $query['flow'] = $item['flow'];
+                $q = http_build_query($query);
+                $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
                 break;
+
         }
         return $return;
     }
@@ -1025,29 +861,22 @@ public static function getTrojanURI(array $item)
                     $return['transport']['service_name'] = ($item['host'] != '' ? $item['host'] : $item['add']);
                 }
                 break;
+            
             case 'trojan':
-                $return = [
-                    'tag' => $item['remark'],
-                    'type' => 'trojan',
-                    'server' => $item['address'],
-                    'server_port' => $item['port'],
-                    'password' => $item['passwd']
-                ];
-                if (in_array($item['net'], ["grpc", "ws"])) {
-                    $return['network'] = $item['net'];
-                    // grpc閰嶇疆
-                    if($item['net'] === "grpc") {
-                        $return['transport']['service_name'] = ($item['host'] != '' ? $item['host'] : $item['add']);
-                    }
-                    // ws閰嶇疆
-                    if($item['net'] === "ws") {
-                        $return['transport']['max_early_data'] = 2048;
-                        $return['transport']['path'] = $item['path'];
-                        $return['transport']['headers'] = ['Host' => [($item['host'] != '' ? $item['host'] : $item['add'])]];
-                        $return['transport']['early_data_header_name'] = 'Sec-WebSocket-Protocol';
-                    }
-                }
+                $query = [];
+                if (!empty($item['net'])) $query['type'] = $item['net'];
+                if (!empty($item['servicename'])) $query['serviceName'] = $item['servicename'];
+                if (!empty($item['security'])) $query['security'] = $item['security'];
+                if (!empty($item['reality_public_key'])) $query['pbk'] = $item['reality_public_key'];
+                if (!empty($item['reality_short_id'])) $query['sid'] = $item['reality_short_id'];
+                if (!empty($item['sni'])) $query['sni'] = $item['sni'];
+                if (!empty($item['host'])) $query['host'] = $item['host'];
+                if (!empty($item['path'])) $query['path'] = $item['path'];
+                if (!empty($item['flow'])) $query['flow'] = $item['flow'];
+                $q = http_build_query($query);
+                $return = 'trojan://' . $item['passwd'] . '@' . $item['address'] . ':' . $item['port'] . ($q ? ('?' . $q) : '') . '#' . rawurlencode($item['remark']);
                 break;
+
         }
 
         return $return;

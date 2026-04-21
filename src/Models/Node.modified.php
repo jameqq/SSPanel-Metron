@@ -391,31 +391,135 @@ class Node extends Model
      * @param int  $is_ss
      * @param bool $emoji
      */
+    
+    /**
+     * Trojan 节点（支持 gRPC + Reality + VLESS）
+     *
+     * 兼容 server 两种写法：
+     * 1) old: host;key=val&key2=val2
+     * 2) new: host;port;...;transport;tls;key=val|key2=val2
+     */
     public function getTrojanItem(User $user, int $mu_port = 0, int $relay_rule_id = 0, int $is_ss = 0, bool $emoji = false): array
     {
         $server = explode(';', $this->server);
-        $opt    = [];
-        if (isset($server[1])) {
+        $opt = [];
+
+        // 1) 若第二段看起来像 query string（含 '=' 或 '&'），优先用 URL::parse_args 解析
+        if (isset($server[1]) && (strpos($server[1], '=') !== false || strpos($server[1], '&') !== false)) {
             $opt = URL::parse_args($server[1]);
+        } else {
+            // 2) 否则尝试在所有段中寻找带 '=' 的段（新格式里参数通常在末段，用 '|' 分隔）
+            $possible = '';
+            for ($i = count($server) - 1; $i >= 0; $i--) {
+                if (strpos($server[$i], '=') !== false) {
+                    $possible = $server[$i];
+                    break;
+                }
+            }
+            if ($possible !== '') {
+                // 将 '|' 转成 '&' 方便解析；手工解析以兼容简单场景
+                $qs = str_replace('|', '&', $possible);
+                $pairs = explode('&', $qs);
+                foreach ($pairs as $p) {
+                    $p = trim($p);
+                    if ($p === '') {
+                        continue;
+                    }
+                    if (strpos($p, '=') !== false) {
+                        list($k, $v) = explode('=', $p, 2);
+                        $opt[trim($k)] = trim($v);
+                    }
+                }
+            }
         }
-        $item['remark']   = ($emoji ? Tools::addEmoji($this->name) : $this->name);
-        $item['type']     = 'trojan';
-        $item['address']  = $server[0];
-        $item['port']     = (isset($opt['port']) ? (int) $opt['port'] : 443);
-        $item['passwd']   = $user->getUuid();
-        $item['host']     = $item['address'];
-        $item['net']	  = (isset($opt['grpc']) ? "grpc" :'');
-        $item['servicename'] = (isset($opt['servicename']) ? $opt['servicename'] :'');
-        $item['flow']	  = (isset($opt['flow']) ? $opt['flow'] :'');
-        $xtls			= (isset($opt['enable_xtls']) ? $opt['enable_xtls'] :'');
-        if($xtls == 'true'){
-            $item['tls'] =  'xtls';
-        }else {
-            $item['tls'] =  'tls';
+
+        // 基本信息
+        $node_name = $this->name;
+        $item = [];
+        $item['remark'] = ($emoji ? Tools::addEmoji($node_name) : $node_name);
+        $item['type'] = 'trojan';
+        $item['address'] = isset($server[0]) ? trim($server[0]) : '127.0.0.1';
+
+        // 端口：首先取位置参数（如果是数字），否则取 opt.port，否则默认 443
+        if (isset($server[1]) && is_numeric($server[1])) {
+            $item['port'] = (int)$server[1];
+        } elseif (isset($opt['port']) && is_numeric($opt['port'])) {
+            $item['port'] = (int)$opt['port'];
+        } else {
+            $item['port'] = 443;
         }
-        if (isset($opt['host'])) {
-            $item['host'] = $opt['host'];
+
+        // 密码（UUID）
+        $item['passwd'] = $user->getUuid();
+
+        // network (net)：优先 opt.net -> transport段 -> opt.grpc
+        if (isset($opt['net']) && $opt['net'] !== '') {
+            $item['net'] = strtolower($opt['net']);
+        } elseif (isset($server[3]) && $server[3] !== '') {
+            $item['net'] = strtolower($server[3]);
+        } elseif (isset($opt['grpc']) && in_array(strtolower($opt['grpc']), ['1', 'true', 'yes'])) {
+            $item['net'] = 'grpc';
+        } else {
+            $item['net'] = 'tcp';
         }
+
+        // servicename (grpc)
+        $item['servicename'] = isset($opt['serviceName']) ? $opt['serviceName'] : (isset($opt['grpc_service_name']) ? $opt['grpc_service_name'] : '');
+
+        // flow (XTLS flow) - 可能来自 flow 或 enable_xtls
+        $item['flow'] = isset($opt['flow']) ? $opt['flow'] : (isset($opt['enable_xtls']) && $opt['enable_xtls'] === 'true' ? 'xtls' : '');
+
+        // security：tls / reality / none
+        if (isset($opt['security']) && $opt['security'] !== '') {
+            $item['security'] = strtolower($opt['security']);
+        } else {
+            $item['security'] = 'tls';
+        }
+
+        // Reality 专用字段（兼容 publicKey / pbk / public_key / shortId / sid）
+        $item['reality'] = false;
+        if ($item['security'] === 'reality' ||
+            isset($opt['publicKey']) || isset($opt['pbk']) || isset($opt['public_key']) ||
+            isset($opt['shortId']) || isset($opt['sid']) || isset($opt['short_id'])
+        ) {
+            $item['reality'] = true;
+            $item['reality_public_key'] = $opt['publicKey'] ?? ($opt['pbk'] ?? ($opt['public_key'] ?? ''));
+            $item['reality_short_id'] = $opt['shortId'] ?? ($opt['sid'] ?? ($opt['short_id'] ?? ''));
+            // reality server_name (可选)
+            $item['reality_server_name'] = $opt['reality_server_name'] ?? ($opt['host'] ?? $item['address']);
+            $item['reality_fingerprint'] = $opt['reality_fingerprint'] ?? ($opt['fp'] ?? '');
+        } else {
+            $item['reality_public_key'] = '';
+            $item['reality_short_id'] = '';
+            $item['reality_server_name'] = '';
+            $item['reality_fingerprint'] = '';
+        }
+
+        // enable_vless 标志（如果存在）
+        $item['enable_vless'] = (isset($opt['enable_vless']) && in_array(strtolower($opt['enable_vless']), ['1', 'true', 'yes']));
+
+        // host / sni / path
+        $item['host'] = isset($opt['host']) ? $opt['host'] : (isset($opt['sni']) ? $opt['sni'] : $item['address']);
+        $item['sni'] = isset($opt['sni']) ? $opt['sni'] : $item['host'];
+        $item['path'] = isset($opt['path']) ? $opt['path'] : (isset($opt['ws_path']) ? $opt['ws_path'] : '');
+
+        // 兼容 grpc 参数中 serviceName 放在不同键名
+        if ($item['net'] === 'grpc' && $item['servicename'] === '') {
+            $item['servicename'] = isset($opt['service']) ? $opt['service'] : (isset($opt['grpc_service_name']) ? $opt['grpc_service_name'] : '');
+        }
+
+        // tls 字段：对下游生成器友好（保持 'tls' 或 'xtls' 或 ''）
+        if ($item['reality']) {
+            $item['tls'] = 'tls'; // reality is on top of tls; keep 'tls' but reality flag true
+        } else {
+            $item['tls'] = (isset($opt['enable_xtls']) && in_array(strtolower($opt['enable_xtls']), ['1','true','yes'])) ? 'xtls' : 'tls';
+        }
+
+        // class / group / ratio（保持与其他 getItem 一致）
+        $item['class'] = $this->node_class;
+        $item['group'] = $_ENV['appName'] ?? '';
+        $item['ratio'] = $this->traffic_rate;
+
         return $item;
     }
 }
