@@ -99,6 +99,7 @@ class NodeController extends AdminController
         $node->node_speedlimit  = $request->getParam('node_speedlimit');
         $node->status           = $request->getParam('status');
         $node->sort             = $request->getParam('sort');
+        $node->custom_config    = $request->getParam('custom_config');
 
         $req_node_ip = trim($request->getParam('node_ip'));
         if ($req_node_ip == '') {
@@ -199,6 +200,7 @@ class NodeController extends AdminController
         $node->node_speedlimit  = $request->getParam('node_speedlimit');
         $node->type             = $request->getParam('type');
         $node->sort             = $request->getParam('sort');
+        $node->custom_config    = $request->getParam('custom_config');
 
         $req_node_ip = trim($request->getParam('node_ip'));
         if ($req_node_ip == '') {
