@@ -559,6 +559,30 @@ class MetronController extends BaseController
                     'url' => URL::getV2UrlVLESS($user, $node),
                 ];
                 break;
+            case '16':
+                $info = $node->getHysteria2Item($user);
+                $res = [
+                    'ret' => 1,
+                    'sort' => 16,
+                    'info' => $info,
+                ];
+                break;
+            case '17':
+                $info = $node->getTuicItem($user);
+                $res = [
+                    'ret' => 1,
+                    'sort' => 17,
+                    'info' => $info,
+                ];
+                break;
+            case '18':
+                $info = $node->getAnyTlsItem($user);
+                $res = [
+                    'ret' => 1,
+                    'sort' => 18,
+                    'info' => $info,
+                ];
+                break;
             default:
                 $res = [
                     'ret' => 0,
