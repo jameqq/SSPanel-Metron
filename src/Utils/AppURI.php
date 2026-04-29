@@ -1181,6 +1181,8 @@ public static function getTrojanURI(array $item)
                 ];
                 if (in_array($item['net'], ["grpc", "ws"])) {
                     $return['network'] = $item['net'];
+                }
+                break;
             case 'hysteria2':
                 $return = [
                     'tag' => $item['remark'],
@@ -1236,19 +1238,6 @@ public static function getTrojanURI(array $item)
                         'alpn' => $item['alpn']
                     ]
                 ];
-                break;
-                    // grpc閰嶇疆
-                    if($item['net'] === "grpc") {
-                        $return['transport']['service_name'] = ($item['host'] != '' ? $item['host'] : $item['add']);
-                    }
-                    // ws閰嶇疆
-                    if($item['net'] === "ws") {
-                        $return['transport']['max_early_data'] = 2048;
-                        $return['transport']['path'] = $item['path'];
-                        $return['transport']['headers'] = ['Host' => [($item['host'] != '' ? $item['host'] : $item['add'])]];
-                        $return['transport']['early_data_header_name'] = 'Sec-WebSocket-Protocol';
-                    }
-                }
                 break;
         }
 
