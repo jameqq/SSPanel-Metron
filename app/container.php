@@ -13,7 +13,6 @@ use Slim\Container;
 $configuration = [
     'settings' => [
         'debug' => $_ENV['debug'],
-        'whoops.editor' => 'sublime',
         'displayErrorDetails' => $_ENV['debug'],
     ]
 ];
