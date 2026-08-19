@@ -1,7 +1,0 @@
-SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
-30 22 * * * www-data php /var/www/xcat sendDiaryMail
-0 0 * * * www-data php /var/www/xcat dailyjob
-* * * * * www-data php /var/www/xcat checkjob
-* * * * * www-data php /var/www/xcat syncnode

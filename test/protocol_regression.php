@@ -69,6 +69,10 @@ $trojan = [
     'type' => 'trojan', 'remark' => 'Trojan gRPC', 'address' => 'trojan.example.com', 'port' => 443,
     'passwd' => 'secret', 'host' => 'trojan.example.com', 'net' => 'grpc', 'servicename' => 'trojan-grpc',
 ];
+$vlessGrpc = $vless;
+$vlessGrpc['remark'] = 'VLESS gRPC';
+$vlessGrpc['net'] = 'grpc';
+$vlessGrpc['servicename'] = 'vless-grpc';
 
 expect(strpos(AppURI::getV2RayNURI($hysteria), 'hysteria2://') === 0, 'Hysteria2 URI generation');
 expect(strpos(AppURI::getV2RayNURI($tuic), 'tuic://') === 0, 'TUIC URI generation');
@@ -86,9 +90,12 @@ expect($clashAnyTls['type'] === 'anytls', 'Mihomo AnyTLS output');
 expect($clashVless['network'] === 'xhttp' && $clashVless['xhttp-opts']['mode'] === 'auto', 'Mihomo xHTTP output');
 expect($clashTrojan['network'] === 'grpc' && $clashTrojan['grpc-opts']['grpc-service-name'] === 'trojan-grpc', 'Mihomo Trojan gRPC output');
 
-foreach ([$hysteria, $tuic, $anyTls, $vless, $trojan] as $item) {
+expect(AppURI::getSingBoxURI($vless) === null, 'sing-box must not emit unsupported xHTTP transport');
+foreach ([$hysteria, $tuic, $anyTls, $vlessGrpc, $trojan] as $item) {
     $singBox = AppURI::getSingBoxURI($item);
     expect(is_array($singBox) && isset($singBox['type']), 'sing-box output for ' . $item['type']);
 }
+expect(AppURI::getSingBoxURI($vlessGrpc)['transport']['service_name'] === 'vless-grpc', 'sing-box VLESS gRPC output');
+expect(AppURI::getSingBoxURI($trojan)['transport']['service_name'] === 'trojan-grpc', 'sing-box Trojan gRPC output');
 
 fwrite(STDOUT, "Protocol and configuration regression tests passed.\n");

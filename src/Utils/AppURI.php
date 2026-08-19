@@ -1172,8 +1172,66 @@ public static function getTrojanURI(array $item)
                     'server_port' => $item['port'],
                     'password' => $item['passwd']
                 ];
-                if (in_array($item['net'], ["grpc", "ws"])) {
-                    $return['network'] = $item['net'];
+                $return['tls'] = [
+                    'enabled' => true,
+                    'server_name' => $item['host'],
+                ];
+                if ($item['net'] === 'grpc') {
+                    $return['transport'] = [
+                        'type' => 'grpc',
+                        'service_name' => $item['servicename'],
+                    ];
+                } elseif ($item['net'] === 'ws') {
+                    $return['transport'] = [
+                        'type' => 'ws',
+                        'path' => isset($item['path']) ? $item['path'] : '/',
+                        'headers' => ['Host' => $item['host']],
+                    ];
+                }
+                break;
+            case 'vless':
+                // sing-box does not implement Xray's xHTTP transport.
+                if ($item['net'] === 'xhttp') {
+                    break;
+                }
+                $return = [
+                    'tag' => $item['remark'],
+                    'type' => 'vless',
+                    'server' => $item['add'],
+                    'server_port' => $item['port'],
+                    'uuid' => $item['id'],
+                    'flow' => isset($item['flow']) ? $item['flow'] : '',
+                ];
+                if (isset($item['tls']) && $item['tls'] === 'tls') {
+                    $return['tls'] = [
+                        'enabled' => true,
+                        'server_name' => !empty($item['sni']) ? $item['sni'] : $item['host'],
+                    ];
+                    if (isset($item['security']) && $item['security'] === 'reality') {
+                        $return['tls']['reality'] = [
+                            'enabled' => true,
+                            'public_key' => isset($item['publicKey']) ? $item['publicKey'] : '',
+                            'short_id' => isset($item['shortId']) ? $item['shortId'] : '',
+                        ];
+                    }
+                }
+                if ($item['net'] === 'grpc') {
+                    $return['transport'] = [
+                        'type' => 'grpc',
+                        'service_name' => $item['servicename'],
+                    ];
+                } elseif ($item['net'] === 'ws') {
+                    $return['transport'] = [
+                        'type' => 'ws',
+                        'path' => $item['path'],
+                        'headers' => ['Host' => $item['host']],
+                    ];
+                } elseif ($item['net'] === 'tcp' && !empty($item['path'])) {
+                    $return['transport'] = [
+                        'type' => 'http',
+                        'host' => [$item['host']],
+                        'path' => $item['path'],
+                    ];
                 }
                 break;
             case 'hysteria2':

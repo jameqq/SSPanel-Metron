@@ -26,6 +26,8 @@ composer install --no-dev --classmap-authoritative
 
 Clear Smarty's compiled templates after replacing the application files. Preserve the existing files under `config/` and do not copy example configuration over production configuration.
 
+The Docker image now runs PHP-FPM 8.4 as the unprivileged `www-data` user on port 9000. Put Nginx or another FastCGI reverse proxy in front of it. Scheduled `xcat` jobs must run in a separate scheduler/container with the same code and production configuration; they are intentionally no longer bundled into the web process.
+
 ## Verification
 
 - Confirm admin node create/edit works and rejects malformed JSON.

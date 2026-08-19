@@ -1,10 +1,13 @@
 {
+    "name": "jameqq/sspanel-metron",
+    "description": "SSPanel-Metron subscription and node management panel",
+    "license": "MIT",
     "repositories": [
         {
             "type": "package",
             "package": {
                 "name": "lokielse/omnipay-alipay",
-                "version": "3.0.6-security",
+                "version": "3.0.6-p1",
                 "dist": {
                     "type": "zip",
                     "url": "https://api.github.com/repos/lokielse/omnipay-alipay/zipball/39a017371c742d877bb18d74608bc1063b0d5c24"
@@ -44,7 +47,7 @@
         "ramsey/uuid": "^4.9",
         "guzzlehttp/guzzle": "^7.15.2",
         "league/omnipay": "^3",
-        "lokielse/omnipay-alipay": "3.0.6-security",
+        "lokielse/omnipay-alipay": "^3.0.6-p1",
         "khanamiryan/qrcode-detector-decoder": "^1.0.6",
         "symfony/yaml": "^7.4.12",
         "endroid/qr-code": "^3.7",
