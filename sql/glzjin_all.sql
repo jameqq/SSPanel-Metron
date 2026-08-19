@@ -180,7 +180,8 @@ CREATE TABLE IF NOT EXISTS `ss_node` (
   `node_bandwidth_limit` bigint(20) NOT NULL DEFAULT '0',
   `bandwidthlimit_resetday` int(11) NOT NULL DEFAULT '0',
   `node_heartbeat` bigint(20) NOT NULL DEFAULT '0',
-  `node_ip` text
+  `node_ip` text,
+  `custom_config` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------

@@ -206,6 +206,9 @@
                                                     <option value="11">V2Ray</option>
                                                     <option value="14">Trojan</option>
                                                     <option value="15">V2Ray-VLESS</option>
+                                                    <option value="16">Hysteria2</option>
+                                                    <option value="17">Tuic</option>
+                                                    <option value="18">AnyTLS</option>
                                                 </select>
                                             </div>
                                         </div>
