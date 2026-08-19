@@ -9,7 +9,8 @@ use App\Utils\{
     Radius,
     Telegram,
     CloudflareDriver,
-    DatatablesHelper
+    DatatablesHelper,
+    NodeConfigValidator
 };
 use App\Services\Config;
 use Slim\Http\{
@@ -99,7 +100,12 @@ class NodeController extends AdminController
         $node->node_speedlimit  = $request->getParam('node_speedlimit');
         $node->status           = $request->getParam('status');
         $node->sort             = $request->getParam('sort');
-        $node->custom_config    = $request->getParam('custom_config');
+        try {
+            NodeConfigValidator::validateServer((int) $node->sort, $node->server);
+            $node->custom_config = NodeConfigValidator::normalizeCustomConfig($request->getParam('custom_config'));
+        } catch (\InvalidArgumentException $exception) {
+            return $response->withJson(['ret' => 0, 'msg' => $exception->getMessage()], 422);
+        }
 
         $req_node_ip = trim($request->getParam('node_ip'));
         if ($req_node_ip == '') {
@@ -200,7 +206,12 @@ class NodeController extends AdminController
         $node->node_speedlimit  = $request->getParam('node_speedlimit');
         $node->type             = $request->getParam('type');
         $node->sort             = $request->getParam('sort');
-        $node->custom_config    = $request->getParam('custom_config');
+        try {
+            NodeConfigValidator::validateServer((int) $node->sort, $node->server);
+            $node->custom_config = NodeConfigValidator::normalizeCustomConfig($request->getParam('custom_config'));
+        } catch (\InvalidArgumentException $exception) {
+            return $response->withJson(['ret' => 0, 'msg' => $exception->getMessage()], 422);
+        }
 
         $req_node_ip = trim($request->getParam('node_ip'));
         if ($req_node_ip == '') {

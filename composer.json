@@ -1,5 +1,6 @@
 {
     "require": {
+        "php": ">=7.4 <8.5",
         "slim/slim": "~3.0",
         "smarty/smarty": "3.*",
         "mailgun/mailgun-php": "^2.6.0",
@@ -36,9 +37,17 @@
         }
     },
     "config": {
+        "platform": {
+            "php": "7.4.33"
+        },
+        "preferred-install": "dist",
+        "sort-packages": true,
         "allow-plugins": {
             "kylekatarnls/update-helper": true,
             "php-http/discovery": true
         }
+    },
+    "scripts": {
+        "test": "@php test/protocol_regression.php"
     }
 }

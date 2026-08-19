@@ -7,6 +7,7 @@ use App\Controllers\BaseController;
 use App\Utils\URL;
 use App\Models\{Node, NodeInfoLog, StreamMedia};
 use App\Services\Config;
+use App\Utils\NodeConfigValidator;
 
 class NodeController extends BaseController
 {
@@ -73,10 +74,7 @@ class NodeController extends BaseController
             ],
         ];
 
-        if (!empty($node->custom_config)) {
-            $decodedCustomConfig = json_decode($node->custom_config, true);
-            $res['data']['custom_config'] = $decodedCustomConfig ?? $node->custom_config;
-        }
+        $res['data']['custom_config'] = NodeConfigValidator::decodeCustomConfig($node->custom_config);
 
         if ($node->sort === 1){
             $server = explode(';', $node->server);
