@@ -1,27 +1,36 @@
-FROM indexyz/php
-LABEL maintainer="Indexyz <indexyz@protonmail.com>"
+FROM composer:2.8.12@sha256:5248900ab8b5f7f880c2d62180e40960cd87f60149ec9a1abfd62ac72a02577c AS vendor
 
-COPY . /var/www
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader --ignore-platform-req=ext-gd
+
+FROM php:8.4-fpm-bookworm@sha256:c5fb7a0c02f4efe280691910c8b734995fa83598cdcf3115ef5dcb2e4617681c
+
+LABEL org.opencontainers.image.source="https://github.com/jameqq/SSPanel-Metron" \
+      org.opencontainers.image.description="SSPanel-Metron" \
+      org.opencontainers.image.licenses="MIT"
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl libfreetype6-dev libjpeg62-turbo-dev libonig-dev libpng-dev libzip-dev && \
+    docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install -j2 bcmath gd mysqli opcache pdo_mysql zip && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --chown=www-data:www-data . /var/www
+COPY --from=vendor --chown=www-data:www-data /app/vendor /var/www/vendor
 WORKDIR /var/www
 
 RUN cp config/.config.example.php config/.config.php && \
     cp config/appprofile.example.php config/appprofile.php && \
-    chmod -R 755 storage && \
-    chmod -R 777 /var/www/storage/framework/smarty/compile/ && \
-    curl -SL https://getcomposer.org/installer -o composer-setup.php && \
-    php composer-setup.php && \
-    php composer.phar install && \
-    php xcat initQQWry && \
-    php xcat ClientDownload && \
-    crontab -l | { cat; echo "30 22 * * * php /var/www/xcat sendDiaryMail"; } | crontab - && \
-    crontab -l | { cat; echo "0 0 * * * php /var/www/xcat dailyjob"; } | crontab - && \
-    crontab -l | { cat; echo "*/1 * * * * php /var/www/xcat checkjob"; } | crontab - && \
-    crontab -l | { cat; echo "*/1 * * * * php /var/www/xcat syncnode"; } | crontab - && \
-    { \
-        echo '[program:crond]'; \
-        echo 'command=cron -f'; \
-        echo 'autostart=true'; \
-        echo 'autorestart=true'; \
-        echo 'killasgroup=true'; \
-        echo 'stopasgroup=true'; \
-    } | tee /etc/supervisor/crond.conf
+    chown -R www-data:www-data storage config && \
+    find storage -type d -exec chmod 0750 {} \; && \
+    find storage -type f -exec chmod 0640 {} \;
+
+USER www-data
+EXPOSE 9000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD php-fpm -t || exit 1
+
+CMD ["php-fpm", "-F"]

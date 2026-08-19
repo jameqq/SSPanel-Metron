@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Firebase\JWT\JWT as JwtClient;
+use Firebase\JWT\Key;
 
 class Jwt
 {
@@ -13,16 +14,16 @@ class Jwt
 
     public static function encode($input)
     {
-        return JwtClient::encode($input, self::getKey());
+        return JwtClient::encode($input, self::getKey(), 'HS256');
     }
 
     public static function encode_withkey($input, $key)
     {
-        return JwtClient::encode($input, $key);
+        return JwtClient::encode($input, $key, 'HS256');
     }
 
     public static function decodeArray($input)
     {
-        return JWT::decode($input, self::getKey(), array('HS256'));
+        return JwtClient::decode($input, new Key(self::getKey(), 'HS256'));
     }
 }

@@ -4,7 +4,9 @@
 
 #### 1.连接 SSH 安装宝塔面板
 
-#### 2.宝塔面板安装环境, 推荐使用 PHP 7.2、MySQL 5.6、Nginx 1.16
+#### 2.安装运行环境
+
+当前部署基线为 PHP 8.4、MySQL 5.7+、Nginx 1.20+ 和 Composer 2。升级旧环境前请先在预发布环境验证全部支付、邮件和计划任务扩展。
 
 #### 3.宝塔面板创建网站, 域名等信息自行填写
 
@@ -16,8 +18,10 @@
 
 
 ```shell
-wget https://getcomposer.org/installer -O composer.phar && php composer.phar && php composer.phar install
+composer install --no-dev --classmap-authoritative
 ```
+
+依赖版本由 `composer.lock` 固定。不要在生产服务器执行 `composer update`。
 
 
 #### 6.复制配置文件

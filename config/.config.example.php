@@ -40,7 +40,7 @@ $_ENV['db_prefix'] = '';
 
 
 //邮件设置--------------------------------------------------------------------------------------------
-$_ENV['mailDriver'] = 'none';      //发送邮件方式：none / mailgun / smtp / sendgrid / aliyunweb
+$_ENV['mailDriver'] = 'none';      //发送邮件方式：none / mailgun / smtp / sendgrid / aliyunweb / postal
 $_ENV['sendPageLimit'] = 50;          //发信分页 解决大站发公告超时问题
 $_ENV['email_queue']     = true;        //如题，自动计划任务邮件使用队列 需要每分钟执行 php xcat Job SendMail
 
@@ -77,6 +77,12 @@ $_ENV['aliyun_AccountName'] = '';    // 发信地址
 $_ENV['aliyun_FromAlias'] = '';    // 发信昵称
 $_ENV['aliyun_TagName'] = '';    // 标签
 $_ENV['aliyun_ReplyToAddress'] = true;  // 使用管理控制台中配置的回信地址
+
+# Postal
+$_ENV['postal_host']    = ''; // Postal API地址
+$_ENV['postal_key']     = ''; // Postal API密钥
+$_ENV['postal_sender'] = ''; // 发件人邮箱
+$_ENV['postal_name']   = ''; // 发件人名称
 
 //备份设置--------------------------------------------------------------------------------------------
 $_ENV['auto_backup_email'] = '';                               //接收备份的邮箱
@@ -280,13 +286,16 @@ $_ENV['admin_contact3'] = '微信～123456';         //没有格式要求，想�
 
 
 //验证码设置------------------------------------------------------------------------------------------
-$_ENV['captcha_provider'] = 'recaptcha';        //取值 recaptcha | geetest(极验)
+$_ENV['captcha_provider'] = 'recaptcha';        //取值 recaptcha | geetest(极验) | turnstile
 
 $_ENV['recaptcha_sitekey'] = '';
 $_ENV['recaptcha_secret'] = '';
 
 $_ENV['geetest_id'] = '';
 $_ENV['geetest_key'] = '';
+
+$_ENV['turnstile_site_key'] = '';   // 站点密钥
+$_ENV['turnstile_secret_key'] = ''; // API 密钥
 
 $_ENV['enable_reg_captcha'] = false;        //启用注册验证码
 $_ENV['enable_login_captcha'] = false;        //启用登录验证码
@@ -550,7 +559,7 @@ $_ENV['relay_insecure_mode'] = false;       //强烈推荐不开启
 
 #是否夹带统计代码，自己在 resources/views/{主题名} 下创建一个 analytics.tpl ，如果有必要就用 literal 界定符
 $_ENV['enable_analytics_code'] = false;
-$_ENV['sspanelAnalysis'] = true;
+$_ENV['sspanelAnalysis'] = false;
 
 #在套了CDN之后获取用户真实ip，如果您不知道这是什么，请不要乱动
 $_ENV['cdn_forwarded_ip'] = array('HTTP_X_FORWARDED_FOR', 'HTTP_ALI_CDN_REAL_IP', 'X-Real-IP', 'True-Client-Ip');

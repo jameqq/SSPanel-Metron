@@ -9,11 +9,11 @@ use App\Services\{
     Payment,
     MetronSetting
 };
-use App\Models\{
-    Ip,
+use App\Models\{Ip,
     Ann,
     Code,
     Node,
+    Paylist,
     Shop,
     User,
     Token,
@@ -30,8 +30,7 @@ use App\Models\{
     DetectRule,
     TrafficLog,
     InviteCode,
-    UserSubscribeLog
-};
+    UserSubscribeLog};
 use App\Utils\{
     GA,
     Pay,
@@ -63,10 +62,14 @@ class UserController extends BaseController
 
         $GtSdk = null;
         $recaptcha_sitekey = null;
+        $turnstile_site_key = null;
         if ($_ENV['enable_checkin_captcha'] == true) {
             switch ($_ENV['captcha_provider']) {
                 case 'recaptcha':
                     $recaptcha_sitekey = $_ENV['recaptcha_sitekey'];
+                    break;
+                case 'turnstile':
+                    $turnstile_site_key = $_ENV['turnstile_site_key'];
                     break;
                 case 'geetest':
                     $uid = time() . random_int(1, 10000);
@@ -113,6 +116,7 @@ class UserController extends BaseController
             ->assign('subUrl', $_ENV['subUrl'])
             ->registerClass('URL', URL::class)
             ->assign('recaptcha_sitekey', $recaptcha_sitekey)
+            ->assign('turnstile_site_key', $turnstile_site_key)
             ->assign('subInfo', LinkController::getSubinfo($this->user, 0))
             ->assign('getClient', $token)
             ->display('user/index.tpl');
@@ -919,6 +923,10 @@ class UserController extends BaseController
 
         $shop->buy($user);
 
+        if (MetronSetting::get('recharge_enable')){
+            Metron::recharge($shop->id, $user);
+        }
+
         $res['ret'] = 1;
         $res['msg'] = '购买成功';
 
@@ -1232,6 +1240,16 @@ class UserController extends BaseController
                     } else {
                         $json = file_get_contents('https://recaptcha.net/recaptcha/api/siteverify?secret=' . $_ENV['recaptcha_secret'] . '&response=' . $recaptcha);
                         $ret = json_decode($json)->success;
+                    }
+                    break;
+                case 'turnstile':
+                    $turnstileResponse = $request->getParam('cf_turnstile_response');
+                    if ($turnstileResponse == '') {
+                        $ret = false;
+                    } else {
+                        $secretKey = $_ENV['turnstile_secret_key'];
+                        $result = Tools::requestTurnstile($secretKey, $turnstileResponse, $_SERVER['REMOTE_ADDR']);
+                        $ret = isset($result['success']) && $result['success'];
                     }
                     break;
                 case 'geetest':

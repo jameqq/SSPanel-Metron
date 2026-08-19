@@ -8,53 +8,55 @@
 
 namespace App\Utils;
 
-use App\Services\Config;
-use Cloudflare\API\Adapter\Guzzle;
-use Cloudflare\API\Auth\APIKey;
-use Cloudflare\API\Endpoints\DNS;
-use Cloudflare\API\Endpoints\Zones;
+use GuzzleHttp\Client;
+use RuntimeException;
 
 class CloudflareDriver
 {
 
-    // @todo: parameters
-    public static function modifyRecord(DNS $dns, $zoneID, $recordID, $name, $content, $proxied = false)
+    private static function client(): Client
     {
-        $details = ['type' => 'A', 'name' => $name, 'content' => $content, 'proxied' => $proxied];
-        if ($dns->updateRecordDetails($zoneID, $recordID, $details)->success == true) {
-            return 1;
+        $headers = ['Accept' => 'application/json'];
+        if (!empty($_ENV['cloudflare_token'])) {
+            $headers['Authorization'] = 'Bearer ' . $_ENV['cloudflare_token'];
+        } else {
+            $headers['X-Auth-Email'] = $_ENV['cloudflare_email'];
+            $headers['X-Auth-Key'] = $_ENV['cloudflare_key'];
         }
-        return 0;
+        return new Client([
+            'base_uri' => 'https://api.cloudflare.com/client/v4/',
+            'headers' => $headers,
+            'timeout' => 15,
+        ]);
     }
 
-    public static function addRecord(DNS $dns, $zoneID, $type, $name, $content, $ttl = 120, $proxied = false)
+    private static function request(Client $client, string $method, string $uri, array $options = []): array
     {
-        if ($dns->addRecord($zoneID, $type, $name, $content, $ttl, $proxied) == true) {
-            return 1;
+        $payload = json_decode((string) $client->request($method, $uri, $options)->getBody(), true);
+        if (!is_array($payload) || empty($payload['success'])) {
+            throw new RuntimeException('Cloudflare API 请求失败');
         }
-        return 0;
+        return $payload;
     }
 
     public static function updateRecord($name, $content, $proxied = false)
     {
-        $key = new APIKey($_ENV['cloudflare_email'], $_ENV['cloudflare_key']);
-        $adapter = new Guzzle($key);
-        $zones = new Zones($adapter);
+        $client = self::client();
+        $zones = self::request($client, 'GET', 'zones', ['query' => ['name' => $_ENV['cloudflare_name'], 'status' => 'active']]);
+        if (empty($zones['result'][0]['id'])) {
+            throw new RuntimeException('Cloudflare 区域不存在或无权访问');
+        }
+        $zoneId = $zones['result'][0]['id'];
+        $records = self::request($client, 'GET', "zones/{$zoneId}/dns_records", ['query' => ['type' => 'A', 'name' => $name]]);
+        $details = ['type' => 'A', 'name' => $name, 'content' => $content, 'ttl' => 120, 'proxied' => (bool) $proxied];
 
-        $zoneID = $zones->getZoneID($_ENV['cloudflare_name']);
-
-        $dns = new DNS($adapter);
-
-        $r = $dns->listRecords($zoneID, '', $name);
-        $recordCount = $r->result_info->count;
-        $records = $r->result;
-
-        if ($recordCount == 0) {
-            self::addRecord($dns, $zoneID, 'A', $name, $content);
-        } elseif ($recordCount >= 1) {
-            foreach ($records as $record) {
-                $recordID = $record->id;
-                self::modifyRecord($dns, $zoneID, $recordID, $name, $content, $proxied);
+        if (empty($records['result'])) {
+            self::request($client, 'POST', "zones/{$zoneId}/dns_records", ['json' => $details]);
+            return;
+        }
+        foreach ($records['result'] as $record) {
+            if (!empty($record['id'])) {
+                self::request($client, 'PUT', "zones/{$zoneId}/dns_records/{$record['id']}", ['json' => $details]);
             }
         }
     }

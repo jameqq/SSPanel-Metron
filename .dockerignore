@@ -1,2 +1,6 @@
 .git
 uim-index-dev/
+.git
+.github
+storage/framework/smarty/compile/*
+storage/logs/*
