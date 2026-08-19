@@ -240,7 +240,7 @@ class URL
                 $sort = [0, 10];
                 break;
             case 'vmess':
-                $sort = [1, 11, 12, 14];
+                $sort = [1, 11, 12, 14, 16, 17, 18];
                 break;
             case 'vless':
                 $sort = [15];
@@ -248,9 +248,18 @@ class URL
             case 'trojan':
                 $sort = [14];
                 break;
+            case 'hysteria2':
+                $sort = [16];
+                break;
+            case 'tuic':
+                $sort = [17];
+                break;
+            case 'anytls':
+                $sort = [18];
+                break;
             default:
                 $Rule['type'] = 'all';
-                $sort = [0, 1, 10, 11, 12, 13, 14, 15];
+                $sort = [0, 1, 10, 11, 12, 13, 14, 15, 16, 17, 18];
                 $is_ss = [0, 1];
                 break;
         }
@@ -299,7 +308,7 @@ class URL
             // 筛选 End
 
             // 其他类型单端口节点
-            if (in_array($node->sort, [1, 11, 12, 13, 14, 15])) {
+            if (in_array($node->sort, [1, 11, 12, 13, 14, 15, 16, 17, 18])) {
                 $node_class = [
                     1 => 'getSS2022Item',          // Shadowsocks 2022
                     11 => 'getV2RayItem',           // V2Ray
@@ -307,6 +316,9 @@ class URL
                     13 => 'getV2RayPluginItem',     // Rico SS (V2RayPlugin && obfs)
                     14 => 'getTrojanItem',          // Trojan
                     15 => 'getV2RayItem',          // V2Ray-VLESS
+                    16 => 'getHysteria2Item',       // Hysteria2
+                    17 => 'getTuicItem',            // Tuic
+                    18 => 'getAnyTlsItem',          // AnyTLS
                 ];
                 $class = $node_class[$node->sort];
                 $item = $node->$class($user, 0, 0, 0, $emoji);

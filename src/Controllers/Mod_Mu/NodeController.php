@@ -73,6 +73,11 @@ class NodeController extends BaseController
             ],
         ];
 
+        if (!empty($node->custom_config)) {
+            $decodedCustomConfig = json_decode($node->custom_config, true);
+            $res['data']['custom_config'] = $decodedCustomConfig ?? $node->custom_config;
+        }
+
         if ($node->sort === 1){
             $server = explode(';', $node->server);
             if ($node->method === '2022-blake3-aes-128-gcm'){
@@ -88,7 +93,9 @@ class NodeController extends BaseController
                 'server_key' => $password,
                 'method' => $node->method,
             ];
-            $res['data']['custom_config'] = $custom_config;
+            if (empty($res['data']['custom_config'])) {
+                $res['data']['custom_config'] = $custom_config;
+            }
             $res['data']['version'] = '2023.7';
         }
 

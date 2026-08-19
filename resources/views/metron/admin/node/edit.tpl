@@ -211,6 +211,9 @@
                                                     <option value="11" {if $node->sort==11}selected{/if}>V2Ray</option>
                                                     <option value="14" {if $node->sort==14}selected{/if}>Trojan</option>
                                                     <option value="15" {if $node->sort==15}selected{/if}>V2Ray-VLESS</option>
+                                                    <option value="16" {if $node->sort==16}selected{/if}>Hysteria2</option>
+                                                    <option value="17" {if $node->sort==17}selected{/if}>Tuic</option>
+                                                    <option value="18" {if $node->sort==18}selected{/if}>AnyTLS</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -219,6 +222,12 @@
                                             <label class="floating-label" for="info">节点描述</label>
                                             <input class="form-control maxwidth-edit" id="info" name="info" type="text"
                                                    value="{$node->info}">
+                                        </div>
+
+                                        <div class="form-group form-group-label">
+                                            <label class="floating-label" for="custom_config">自定义配置（custom_config）</label>
+                                            <textarea class="form-control maxwidth-edit" id="custom_config" name="custom_config" rows="5">{$node->custom_config}</textarea>
+                                            <p class="form-control-guide"><i class="material-icons">info</i>支持 JSON 字符串，将通过 API 下发给节点。</p>
                                         </div>
 
                                         <div class="form-group form-group-label">
@@ -352,6 +361,7 @@
                     custom_method,
                     rate: $$getValue('rate'),
                     info: $$getValue('info'),
+                    custom_config: $$getValue('custom_config'),
                     type,
                     group: $$getValue('group'),
                     status: $$getValue('status'),
@@ -386,4 +396,3 @@
     });
     {/literal}
 </script>
-
