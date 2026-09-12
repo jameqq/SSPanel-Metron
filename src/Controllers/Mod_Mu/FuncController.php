@@ -26,13 +26,18 @@ class FuncController extends BaseController
 
     public function get_detect_logs($request, $response, $args)
     {
-        $rules = DetectRule::all();
+        $rules = DetectRule::orderBy('id')->get()->values()->all();
+        $etag = '"' . hash('sha256', json_encode($rules)) . '"';
+
+        if ($request->getHeaderLine('If-None-Match') === $etag) {
+            return $response->withStatus(304)->withHeader('ETag', $etag);
+        }
 
         $res = [
             'ret' => 1,
             'data' => $rules
         ];
-        return $this->echoJson($response, $res);
+        return $this->echoJson($response, $res)->withHeader('ETag', $etag);
     }
 
     public function get_dis_node_info($nodeid)

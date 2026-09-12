@@ -94,6 +94,10 @@ class NodeController extends BaseController
             if (empty($res['data']['custom_config'])) {
                 $res['data']['custom_config'] = $custom_config;
             }
+        }
+
+        // Hysteria2, TUIC and AnyTLS still use XrayRP's protocol-specific server parser.
+        if (!empty($res['data']['custom_config']) && !in_array((int) $node->sort, [16, 17, 18], true)) {
             $res['data']['version'] = '2023.7';
         }
 
@@ -131,8 +135,12 @@ class NodeController extends BaseController
 
     public function getConfig($request, $response, $args)
     {
-        $data = $request->getParsedBody();
-        switch ($data['type']) {
+        $data = $request->getParsedBody() ?: [];
+        $res = [
+            'ret' => 0,
+            'data' => 'unsupported config type',
+        ];
+        switch ($data['type'] ?? '') {
             case ('database'):
                 $db_config = Config::getDbConfig();
                 $db_config['host'] = $this->getServerIP();
@@ -142,8 +150,17 @@ class NodeController extends BaseController
                 ];
                 break;
             case ('webapi'):
-                $webapiConfig = [];
-                #todo
+                $res = [
+                    'ret' => 1,
+                    'data' => [],
+                ];
+                break;
+            case ('xrayr_cert'):
+                $res = [
+                    'ret' => 1,
+                    'data' => Config::getXrayRCertConfig(),
+                ];
+                break;
         }
         return $this->echoJson($response, $res);
     }

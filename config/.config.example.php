@@ -496,6 +496,11 @@ $_ENV['v2ray_protocol'] = 'HTTP/2 + TLS';       //V2Ray协议
 $_ENV['v2ray_alter_id'] = 32;
 $_ENV['v2ray_level'] = 0;
 
+// XrayRP 可选的 DNS-01 证书配置；留空时继续使用节点本地配置。
+$_ENV['xrayr_cert_provider'] = '';
+$_ENV['xrayr_cert_email'] = '';
+$_ENV['xrayr_cert_dns_env'] = []; // 例如 ['CF_DNS_API_TOKEN' => 'token']
+
 
 //以下所有均为高级设置（一般用不上，不用改---------------------------------------------------------------------
 

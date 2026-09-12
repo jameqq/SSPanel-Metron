@@ -2,9 +2,11 @@
 
 require_once __DIR__ . '/../src/Utils/NodeConfigValidator.php';
 require_once __DIR__ . '/../src/Utils/AppURI.php';
+require_once __DIR__ . '/../src/Services/Config.php';
 
 use App\Utils\AppURI;
 use App\Utils\NodeConfigValidator;
+use App\Services\Config;
 
 function expect($condition, string $message): void
 {
@@ -34,7 +36,17 @@ expectInvalid(function (): void {
     NodeConfigValidator::normalizeCustomConfig('{"__proto__":{}}');
 }, 'custom_config must reject prototype-pollution keys');
 
-NodeConfigValidator::validateServer(16, 'hy.example.com;port=443|sni=hy.example.com|alpn=h3|obfs=salamander|upmbps=50|downmbps=200');
+$_ENV['xrayr_cert_provider'] = 'cloudflare';
+$_ENV['xrayr_cert_email'] = 'ops@example.com';
+$_ENV['xrayr_cert_dns_env'] = '{"CF_DNS_API_TOKEN":"secret","IGNORED":{"nested":true}}';
+$certConfig = Config::getXrayRCertConfig();
+expect($certConfig['provider'] === 'cloudflare', 'XrayRP certificate provider');
+expect($certConfig['email'] === 'ops@example.com', 'XrayRP certificate email');
+expect((array) $certConfig['dns_env'] === ['CF_DNS_API_TOKEN' => 'secret'], 'XrayRP certificate DNS environment');
+$_ENV['xrayr_cert_dns_env'] = [];
+expect(json_encode(Config::getXrayRCertConfig()['dns_env']) === '{}', 'empty certificate DNS environment must be a JSON object');
+
+NodeConfigValidator::validateServer(16, 'hy.example.com;port=443|sni=hy.example.com|alpn=h3|obfs=salamander|upmbps=50|downmbps=200|ignore_client_bandwidth=1');
 NodeConfigValidator::validateServer(17, 'tuic.example.com;port=443|congestion_control=bbr|udp_relay_mode=native|zero_rtt_handshake=1');
 NodeConfigValidator::validateServer(18, 'anytls.example.com;port=443|alpn=h2,http/1.1|insecure=0');
 expectInvalid(function (): void {

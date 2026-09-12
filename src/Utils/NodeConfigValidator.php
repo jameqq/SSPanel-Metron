@@ -62,7 +62,7 @@ final class NodeConfigValidator
         self::validateIntegerOption($options, 'upmbps', 1, 100000);
         self::validateIntegerOption($options, 'downmbps', 1, 100000);
 
-        foreach (['insecure', 'zero_rtt_handshake'] as $name) {
+        foreach (['insecure', 'zero_rtt_handshake', 'ignore_client_bandwidth'] as $name) {
             if (isset($options[$name]) && !in_array(strtolower($options[$name]), ['0', '1', 'true', 'false'], true)) {
                 throw new InvalidArgumentException($name . ' 只能是 0、1、true 或 false');
             }
@@ -110,7 +110,7 @@ final class NodeConfigValidator
     {
         $common = ['port', 'sni', 'alpn', 'insecure'];
         $allowed = [
-            16 => array_merge($common, ['obfs', 'obfs_password', 'upmbps', 'downmbps']),
+            16 => array_merge($common, ['obfs', 'obfs_password', 'upmbps', 'downmbps', 'ignore_client_bandwidth']),
             17 => array_merge($common, ['congestion_control', 'udp_relay_mode', 'zero_rtt_handshake']),
             18 => $common,
         ][$sort];

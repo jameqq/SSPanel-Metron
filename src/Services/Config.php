@@ -103,6 +103,30 @@ class Config
         ];
     }
 
+    public static function getXrayRCertConfig(): array
+    {
+        $dnsEnv = $_ENV['xrayr_cert_dns_env'] ?? [];
+        if (is_string($dnsEnv)) {
+            $decoded = json_decode($dnsEnv, true);
+            $dnsEnv = is_array($decoded) ? $decoded : [];
+        }
+
+        $normalizedDnsEnv = [];
+        if (is_array($dnsEnv)) {
+            foreach ($dnsEnv as $key => $value) {
+                if (is_string($key) && $key !== '' && is_scalar($value)) {
+                    $normalizedDnsEnv[$key] = (string) $value;
+                }
+            }
+        }
+
+        return [
+            'provider' => (string) ($_ENV['xrayr_cert_provider'] ?? ''),
+            'email' => (string) ($_ENV['xrayr_cert_email'] ?? ''),
+            'dns_env' => (object) $normalizedDnsEnv,
+        ];
+    }
+
     public static function getRadiusDbConfig()
     {
         return [

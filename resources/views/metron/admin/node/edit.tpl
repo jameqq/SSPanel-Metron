@@ -227,7 +227,7 @@
                                         <div class="form-group form-group-label">
                                             <label class="floating-label" for="custom_config">自定义配置（custom_config）</label>
                                             <textarea class="form-control maxwidth-edit" id="custom_config" name="custom_config" rows="5">{$node->custom_config|escape:'html'}</textarea>
-                                            <p class="form-control-guide"><i class="material-icons">info</i>支持 JSON 字符串，将通过 API 下发给节点。</p>
+                                            <p class="form-control-guide"><i class="material-icons">info</i>V2Ray/VLESS/Trojan 高级配置需包含 offset_port_node；支持 xHTTP、REALITY、Proxy Protocol。Hysteria2/TUIC/AnyTLS 参数请继续填写在节点地址中。</p>
                                         </div>
 
                                         <div class="form-group form-group-label">

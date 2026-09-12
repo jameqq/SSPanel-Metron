@@ -119,6 +119,7 @@
                                             <option value="12">V2Ray 中转</option>
                                             <option value="13">Shadowsocks V2Ray-Plugin&Obfs</option>
                                             <option value="14">Trojan</option>
+                                            <option value="15">V2Ray-VLESS</option>
                                             <option value="16">Hysteria2</option>
                                             <option value="17">Tuic</option>
                                             <option value="18">AnyTLS</option>
@@ -130,6 +131,12 @@
                                     <label class="floating-label" for="info">节点描述</label>
                                     <input class="form-control maxwidth-edit" id="info" type="text" name="info"
                                            value="无描述">
+                                </div>
+
+                                <div class="form-group form-group-label">
+                                    <label class="floating-label" for="custom_config">XrayRP 自定义配置（JSON）</label>
+                                    <textarea class="form-control maxwidth-edit" id="custom_config" name="custom_config" rows="5"></textarea>
+                                    <p class="form-control-guide"><i class="material-icons">info</i>V2Ray/VLESS/Trojan 高级配置需包含 offset_port_node；支持 xHTTP、REALITY、Proxy Protocol。Hysteria2/TUIC/AnyTLS 参数请继续填写在节点地址中。</p>
                                 </div>
 
                                 <div class="form-group form-group-label">
@@ -249,6 +256,7 @@
                     custom_method,
                     rate: $$getValue('rate'),
                     info: $$getValue('info'),
+                    custom_config: $$getValue('custom_config'),
                     type,
                     group: $$getValue('group'),
                     status: $$getValue('status'),
