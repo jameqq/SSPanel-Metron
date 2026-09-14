@@ -164,6 +164,17 @@ class URL
                 ->where('node_class', '<=', $user->class);
         }
 
+        if (!isset($rules['include_unhealthy']) || $rules['include_unhealthy'] !== true) {
+            $freshAfter = time() - 900;
+            $query->whereNotExists(function ($healthQuery) use ($freshAfter) {
+                $healthQuery->selectRaw('1')
+                    ->from('node_health_state')
+                    ->whereColumn('node_health_state.node_id', 'ss_node.id')
+                    ->where('node_health_state.status', 'unhealthy')
+                    ->where('node_health_state.last_checked_at', '>=', $freshAfter);
+            });
+        }
+
         // 等级筛选
         if (isset($rules['content']['class']) && count($rules['content']['class']) > 0) {
             $query->whereIn('node_class', $rules['content']['class']);

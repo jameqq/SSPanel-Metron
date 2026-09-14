@@ -497,24 +497,7 @@ class UserController extends BaseController
 
     public function invite($request, $response, $args)
     {
-        $code = InviteCode::where('user_id', $this->user->id)->first();
-        if ($code == null) {
-            $this->user->addInviteCode();
-            $code = InviteCode::where('user_id', $this->user->id)->first();
-        }
-
-        $pageNum = $request->getQueryParams()['page'] ?? 1;
-        $paybacks = Payback::where('ref_by', $this->user->id)->orderBy('id', 'desc')->paginate(15, ['*'], 'page', $pageNum);
-        if (!$paybacks_sum = Payback::where('ref_by', $this->user->id)->sum('ref_get')) {
-            $paybacks_sum = 0;
-        }
-        $paybacks->setPath('/user/invite');
-
-        return $this->view()
-            ->assign('code', $code)
-            ->assign('paybacks', $paybacks)
-            ->assign('paybacks_sum', $paybacks_sum)
-            ->display('user/invite.tpl');
+        return $response->withStatus(302)->withHeader('Location', '/user/setting/invite');
     }
 
     public function buyInvite($request, $response, $args)

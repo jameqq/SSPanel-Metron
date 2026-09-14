@@ -1,3 +1,7 @@
+                                                        <!-- 统一订阅入口：根据客户端 User-Agent 自动返回对应格式 -->
+                                                        <div class="btn-group mb-3 mr-3">
+                                                            <button type="button" class="btn btn-pill btn-primary copy-text" data-clipboard-text="{$subInfo["auto"]}"><i class="fa fa-link text-white"></i>&nbsp;&nbsp;复制统一订阅&nbsp;&nbsp;</button>
+                                                        </div>
                                                         {if in_array('ssr',$metron['index_sub'])}
                                                         <!-- SSR订阅 -->
                                                         <div class="btn-group mb-3 mr-3">
@@ -110,6 +114,9 @@
                                                             <!-- V2Ray订阅 -->
                                                             <div class="btn-group mb-3 mr-3">
                                                                 <button type="button" class="btn btn-pill btn-v2ray copy-text" data-clipboard-text="{$subInfo["v2ray_vless"]}"><i class="metron-v2rayng text-white"></i>&nbsp;&nbsp;复制 V2Ray-VLESS 订阅&nbsp;&nbsp;</button>
+                                                            </div>
+                                                            <div class="btn-group mb-3 mr-3">
+                                                                <button type="button" class="btn btn-pill btn-v2ray copy-text" data-clipboard-text="{$subInfo["fancyss"]}"><i class="icon text-white">router</i>&nbsp;&nbsp;复制梅林 FancySS 订阅&nbsp;&nbsp;</button>
                                                             </div>
                                                         {/if}
                                                         {if in_array('surfboard',$metron['index_sub'])}

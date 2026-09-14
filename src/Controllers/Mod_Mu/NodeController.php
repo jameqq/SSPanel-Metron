@@ -18,12 +18,17 @@ class NodeController extends BaseController
             $node = Node::where('node_ip', $_SERVER['REMOTE_ADDR'])->first();
             $node_id = $node->id;
         }
-        $load = $request->getParam('load');
+        $load = $request->getParam('load') ?: $request->getParam('cpu');
         $uptime = $request->getParam('uptime');
         $log = new NodeInfoLog();
         $log->node_id = $node_id;
-        $log->load = $load;
-        $log->uptime = $uptime;
+        $log->load = substr((string) $load, 0, 32);
+        $log->uptime = (float) $uptime;
+        $log->memory_usage = substr((string) $request->getParam('mem'), 0, 32);
+        $log->disk_usage = substr((string) $request->getParam('disk'), 0, 32);
+        $log->xray_version = substr((string) $request->getParam('xray_version'), 0, 128);
+        $log->hysteria_version = substr((string) $request->getParam('hysteria_version'), 0, 128);
+        $log->singbox_version = substr((string) $request->getParam('singbox_version'), 0, 128);
         $log->log_time = time();
         if (!$log->save()) {
             $res = [

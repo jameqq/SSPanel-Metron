@@ -50,6 +50,11 @@ return function (SlimApp $app) {
         $this->get('/node/{id}',                App\Controllers\User\NodeController::class . ':nodeInfo');
         $this->get('/node/{id}/ajax',           App\Controllers\User\NodeController::class . ':nodeAjax');
 
+        $this->get('/subscription/devices',     App\Controllers\User\SubscriptionDeviceController::class . ':index');
+        $this->post('/subscription/devices',    App\Controllers\User\SubscriptionDeviceController::class . ':create');
+        $this->post('/subscription/devices/{id}/rotate', App\Controllers\User\SubscriptionDeviceController::class . ':rotate');
+        $this->delete('/subscription/devices/{id}', App\Controllers\User\SubscriptionDeviceController::class . ':revoke');
+
         $this->get('/detect',                   App\Controllers\UserController::class . ':detect_index');
         $this->get('/detect/log',               App\Controllers\UserController::class . ':detect_log');
 
@@ -200,6 +205,8 @@ return function (SlimApp $app) {
         $this->post('/trafficlog/ajax',         App\Controllers\AdminController::class . ':ajax_trafficLog');
         // Node Mange
         $this->get('/node',                     App\Controllers\Admin\NodeController::class . ':index');
+        $this->get('/node/health',              App\Controllers\Admin\NodeHealthController::class . ':index');
+        $this->get('/node/health/{id}/probe',   App\Controllers\Admin\NodeHealthController::class . ':probe');
 
         $this->get('/node/create',              App\Controllers\Admin\NodeController::class . ':create');
         $this->post('/node',                    App\Controllers\Admin\NodeController::class . ':add');
@@ -430,6 +437,7 @@ return function (SlimApp $app) {
     });
 
     $app->group('/link', function () {
+        $this->get('/{token}/{profile}', App\Controllers\LinkController::class . ':GetContent');
         $this->get('/{token}',          App\Controllers\LinkController::class . ':GetContent');
     });
 

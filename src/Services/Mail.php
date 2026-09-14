@@ -13,7 +13,7 @@ use App\Services\Mail\Ses;
 use App\Services\Mail\Smtp;
 use App\Services\Mail\SendGrid;
 use App\Services\Mail\NullMail;
-use Smarty;
+use Smarty\Smarty;
 
 class Mail
 {
@@ -48,7 +48,8 @@ class Mail
      */
     public static function genHtml($template, $ary)
     {
-        $smarty = new smarty();
+        $smarty = new Smarty();
+        View::registerCompatibilityPlugins($smarty);
         $smarty->settemplatedir(BASE_PATH . '/resources/email/');
         $smarty->setcompiledir(BASE_PATH . '/storage/framework/smarty/compile/');
         $smarty->setcachedir(BASE_PATH . '/storage/framework/smarty/cache/');

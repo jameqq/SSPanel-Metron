@@ -33,6 +33,11 @@
                                                     <span class="menu-text"><strong>节点列表</strong></span>
                                                 </a>
                                             </li>
+                                            <li class="menu-item menu-item-submenu menu-item-rel">
+                                                <a href="/user/subscription/devices" class="menu-link">
+                                                    <span class="menu-text"><strong>设备订阅</strong></span>
+                                                </a>
+                                            </li>
                                             <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click" aria-haspopup="true">
                                                 <a href="javascript:;" class="menu-link menu-toggle">
                                                     <span class="menu-text"><strong>我的账号</strong></span>

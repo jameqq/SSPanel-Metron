@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Smarty;
+use Smarty\Smarty;
 use App\Utils;
 
 class View
@@ -12,7 +12,8 @@ class View
 
     public static function getSmarty()
     {
-        $smarty = new smarty(); //实例化smarty
+        $smarty = new Smarty(); //实例化smarty
+        self::registerCompatibilityPlugins($smarty);
 
         $user = Auth::getUser();
 
@@ -45,5 +46,21 @@ class View
         }
 
         return $smarty;
+    }
+
+    public static function registerCompatibilityPlugins(Smarty $smarty)
+    {
+        $modifiers = [
+            'count', 'date', 'in_array', 'is_bool', 'json_decode', 'json_encode',
+            'number_format', 'property_exists', 'strpos', 'strtotime', 'substr', 'time',
+        ];
+
+        foreach ($modifiers as $modifier) {
+            $smarty->registerPlugin('modifier', $modifier, $modifier);
+        }
+
+        $smarty->registerPlugin('modifier', 'isset', function ($value) {
+            return isset($value);
+        });
     }
 }

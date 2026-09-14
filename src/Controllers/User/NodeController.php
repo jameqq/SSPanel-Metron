@@ -126,9 +126,10 @@ class NodeController extends UserController
             }
 
             $array_node['online_user'] = 0;
+            $healthSourceNodeId = $node->getHealthSourceNodeId();
 
             foreach ($onlineLogs as $log) {
-                if ($log['node_id'] != $node->id) {
+                if ($log['node_id'] != $healthSourceNodeId) {
                     continue;
                 }
                 if (in_array($node->sort, array(0, 7, 8, 10, 11, 12, 13, 14, 15))) {
@@ -141,7 +142,7 @@ class NodeController extends UserController
 
             // check node status
             // 0: new node; -1: offline; 1: online
-            $node_heartbeat = $node->node_heartbeat + 300;
+            $node_heartbeat = $node->getEffectiveNodeHeartbeat() + 300;
             $array_node['online'] = -1;
             if (!in_array($node->sort, array(0, 1, 7, 8, 10, 11, 12, 13, 14, 15)) || $node_heartbeat == 300) {
                 $array_node['online'] = 0;
@@ -151,7 +152,7 @@ class NodeController extends UserController
 
             $array_node['latest_load'] = -1;
             foreach ($infoLogs as $log) {
-                if ($log['node_id'] == $node->id) {
+                if ($log['node_id'] == $healthSourceNodeId) {
                     $array_node['latest_load'] = (explode(' ', $log['load']))[0] * 100;
                     break;
                 }

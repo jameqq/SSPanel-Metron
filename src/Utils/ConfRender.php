@@ -8,15 +8,17 @@
 
 namespace App\Utils;
 
-use Smarty;
+use Smarty\Smarty;
 use App\Services\Config;
+use App\Services\View;
 
 
 class ConfRender
 {
     public static function getTemplateRender()
     {
-        $smarty = new smarty();
+        $smarty = new Smarty();
+        View::registerCompatibilityPlugins($smarty);
 
         $smarty->settemplatedir(BASE_PATH . '/resources/conf/');
         $smarty->setcompiledir(BASE_PATH . '/storage/framework/smarty/compile/');

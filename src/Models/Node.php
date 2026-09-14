@@ -38,7 +38,7 @@ class Node extends Model
 
     public function getLastNodeInfoLog()
     {
-        $id = $this->attributes['id'];
+        $id = $this->getHealthSourceNodeId();
         $log = NodeInfoLog::where('node_id', $id)->orderBy('id', 'desc')->first();
         if ($log == null) {
             return null;
@@ -57,7 +57,7 @@ class Node extends Model
 
     public function getNodeUpRate()
     {
-        $id = $this->attributes['id'];
+        $id = $this->getHealthSourceNodeId();
         $log = NodeOnlineLog::where('node_id', $id)->where('log_time', '>=', time() - 86400)->count();
 
         return $log / 1440;
@@ -65,7 +65,7 @@ class Node extends Model
 
     public function getNodeLoad()
     {
-        $id = $this->attributes['id'];
+        $id = $this->getHealthSourceNodeId();
         $log = NodeInfoLog::where('node_id', $id)->orderBy(
             'id',
             'desc'
@@ -75,7 +75,7 @@ class Node extends Model
 
     public function getNodeAlive()
     {
-        $id = $this->attributes['id'];
+        $id = $this->getHealthSourceNodeId();
         $log = NodeOnlineLog::where('node_id', $id)->orderBy(
             'id',
             'desc'
@@ -85,7 +85,7 @@ class Node extends Model
 
     public function getOnlineUserCount()
     {
-        $id = $this->attributes['id'];
+        $id = $this->getHealthSourceNodeId();
         $log = NodeOnlineLog::where('node_id', $id)->where('log_time', '>', time() - 300)->orderBy(
             'id',
             'desc'
@@ -136,7 +136,8 @@ class Node extends Model
     public function isNodeOnline()
     {
         $delay = 300;
-        if ($this->node_heartbeat === 0) {
+        $heartbeat = $this->getEffectiveNodeHeartbeat();
+        if ($heartbeat === 0) {
             return false;
         }
 
@@ -145,7 +146,28 @@ class Node extends Model
             return null;
         }
 
-        return ($this->node_heartbeat > time() - $delay);
+        return ($heartbeat > time() - $delay);
+    }
+
+    public function getHealthSourceNodeId(): int
+    {
+        $sourceId = (int) ($this->attributes['health_source_node_id'] ?? 0);
+        return $sourceId > 0 && $sourceId !== (int) $this->attributes['id']
+            ? $sourceId
+            : (int) $this->attributes['id'];
+    }
+
+    public function getHealthSourceNode(): Node
+    {
+        $sourceId = $this->getHealthSourceNodeId();
+        return $sourceId === (int) $this->attributes['id']
+            ? $this
+            : (Node::find($sourceId) ?: $this);
+    }
+
+    public function getEffectiveNodeHeartbeat(): int
+    {
+        return (int) $this->getHealthSourceNode()->node_heartbeat;
     }
 
     public function isNodeTrafficOut()

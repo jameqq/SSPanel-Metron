@@ -48,6 +48,7 @@ class NodeController extends AdminController
             'node_bandwidth_limit'    => '流量限制/GB',
             'bandwidthlimit_resetday' => '流量重置日',
             'node_heartbeat'          => '上一次活跃时间',
+            'health_source_node_id'   => '状态来源节点ID',
             'custom_method'           => '自定义加密',
             'custom_rss'              => '自定义协议以及混淆',
             'mu_only'                 => '只启用单端口多用户',
@@ -100,6 +101,11 @@ class NodeController extends AdminController
         $node->node_speedlimit  = $request->getParam('node_speedlimit');
         $node->status           = $request->getParam('status');
         $node->sort             = $request->getParam('sort');
+        try {
+            $node->health_source_node_id = $this->normalizeHealthSourceNodeId($request->getParam('health_source_node_id'));
+        } catch (\InvalidArgumentException $exception) {
+            return $response->withJson(['ret' => 0, 'msg' => $exception->getMessage()], 422);
+        }
         try {
             NodeConfigValidator::validateServer((int) $node->sort, $node->server);
             $node->custom_config = NodeConfigValidator::normalizeCustomConfig($request->getParam('custom_config'));
@@ -206,6 +212,11 @@ class NodeController extends AdminController
         $node->node_speedlimit  = $request->getParam('node_speedlimit');
         $node->type             = $request->getParam('type');
         $node->sort             = $request->getParam('sort');
+        try {
+            $node->health_source_node_id = $this->normalizeHealthSourceNodeId($request->getParam('health_source_node_id'), (int) $node->id);
+        } catch (\InvalidArgumentException $exception) {
+            return $response->withJson(['ret' => 0, 'msg' => $exception->getMessage()], 422);
+        }
         try {
             NodeConfigValidator::validateServer((int) $node->sort, $node->server);
             $node->custom_config = NodeConfigValidator::normalizeCustomConfig($request->getParam('custom_config'));
@@ -324,8 +335,13 @@ class NodeController extends AdminController
     public function copy($request, $response, $args)
     {
         $id = $request->getParam('id');
-        $res = Node::query()->find($id)->replicate()->save();
-        if (!$res) {
+        $source = Node::query()->find($id);
+        if ($source === null) {
+            return $response->withJson(['ret' => 0, 'msg' => '源节点不存在'], 404);
+        }
+        $copy = $source->replicate();
+        $copy->health_source_node_id = $source->getHealthSourceNodeId();
+        if (!$copy->save()) {
             $rs['ret'] = 0;
             $rs['msg'] = "复制失败";
             return $response->getBody()->write(json_encode($rs));
@@ -442,7 +458,8 @@ class NodeController extends AdminController
             $tempdata['node_bandwidth']             = Tools::flowToGB($node->node_bandwidth);
             $tempdata['node_bandwidth_limit']       = Tools::flowToGB($node->node_bandwidth_limit);
             $tempdata['bandwidthlimit_resetday']    = $node->bandwidthlimit_resetday;
-            $tempdata['node_heartbeat']             = date('Y-m-d H:i:s', $node->node_heartbeat);
+            $tempdata['node_heartbeat']             = date('Y-m-d H:i:s', $node->getEffectiveNodeHeartbeat());
+            $tempdata['health_source_node_id']       = (int) $node->health_source_node_id ?: '独立';
             $tempdata['custom_method']              = ((bool) $node->custom_method ? '启用' : '关闭');
             $tempdata['custom_rss']                 = ((bool) $node->custom_rss ? '启用' : '关闭');
             $tempdata['mu_only']                    = ($node->mu_only == 1 ? '启用' : '关闭');
@@ -457,5 +474,25 @@ class NodeController extends AdminController
         ];
 
         return $response->withJson($info);
+    }
+
+    private function normalizeHealthSourceNodeId($value, int $nodeId = 0): int
+    {
+        $sourceId = (int) $value;
+        if ($sourceId <= 0) {
+            return 0;
+        }
+        if ($sourceId === $nodeId) {
+            throw new \InvalidArgumentException('状态来源节点不能是当前节点自身');
+        }
+        $source = Node::find($sourceId);
+        if ($source === null) {
+            throw new \InvalidArgumentException('状态来源节点不存在');
+        }
+        $resolvedId = $source->getHealthSourceNodeId();
+        if ($resolvedId === $nodeId) {
+            throw new \InvalidArgumentException('状态来源节点不能形成循环引用');
+        }
+        return $resolvedId;
     }
 }

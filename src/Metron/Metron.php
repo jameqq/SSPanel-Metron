@@ -467,6 +467,9 @@ class Metron
             $link = Link::where('type', 11)->where('userid', $user->id)->first();
         }
 
+        if ($link === null) {
+            return false;
+        }
         return $link->filter != null ? json_decode($link->filter, true) : false;
     }
 

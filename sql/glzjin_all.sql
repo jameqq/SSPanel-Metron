@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS `link` (
   `type` int(11) NOT NULL,
   `address` text NOT NULL,
   `port` int(11) NOT NULL,
-  `token` text NOT NULL,
+  `token` varchar(64) NOT NULL,
   `ios` int(11) NOT NULL DEFAULT '0',
   `userid` bigint(20) NOT NULL,
   `isp` text,
@@ -180,6 +180,7 @@ CREATE TABLE IF NOT EXISTS `ss_node` (
   `node_bandwidth_limit` bigint(20) NOT NULL DEFAULT '0',
   `bandwidthlimit_resetday` int(11) NOT NULL DEFAULT '0',
   `node_heartbeat` bigint(20) NOT NULL DEFAULT '0',
+  `health_source_node_id` int(11) NOT NULL DEFAULT '0',
   `node_ip` text,
   `custom_config` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -195,6 +196,11 @@ CREATE TABLE IF NOT EXISTS `ss_node_info` (
   `node_id` int(11) NOT NULL,
   `uptime` float NOT NULL,
   `load` varchar(32) NOT NULL,
+  `memory_usage` varchar(32) DEFAULT NULL,
+  `disk_usage` varchar(32) DEFAULT NULL,
+  `xray_version` varchar(128) DEFAULT NULL,
+  `hysteria_version` varchar(128) DEFAULT NULL,
+  `singbox_version` varchar(128) DEFAULT NULL,
   `log_time` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -350,7 +356,9 @@ ALTER TABLE `code`
 -- Indexes for table `link`
 --
 ALTER TABLE `link`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_link_token` (`token`),
+  ADD KEY `idx_link_user_type_geo` (`userid`,`type`,`geo`);
 
 --
 -- Indexes for table `login_ip`
@@ -714,8 +722,41 @@ CREATE TABLE IF NOT EXISTS `user_subscribe_log` (
   `request_ip`         varchar(128)     NOT NULL COMMENT '请求 IP',
   `request_time`       datetime         NOT NULL COMMENT '请求时间',
   `request_user_agent` text                      COMMENT '请求 UA 信息',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_sublog_user_time` (`user_id`,`request_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户订阅日志';
+
+CREATE TABLE IF NOT EXISTS `subscription_device` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `profile` varchar(32) NOT NULL DEFAULT 'auto',
+  `token_hash` char(64) NOT NULL,
+  `token_prefix` varchar(10) NOT NULL,
+  `created_at` bigint(20) NOT NULL,
+  `expires_at` bigint(20) DEFAULT NULL,
+  `last_access_at` bigint(20) DEFAULT NULL,
+  `last_access_ip` varchar(45) DEFAULT NULL,
+  `revoked_at` bigint(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_subscription_device_token_hash` (`token_hash`),
+  KEY `idx_subscription_device_user_status` (`user_id`,`revoked_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户设备订阅';
+
+CREATE TABLE IF NOT EXISTS `node_health_state` (
+  `node_id` int(11) NOT NULL,
+  `status` varchar(16) NOT NULL DEFAULT 'unknown',
+  `consecutive_failures` int(11) NOT NULL DEFAULT '0',
+  `consecutive_successes` int(11) NOT NULL DEFAULT '0',
+  `last_latency_ms` int(11) DEFAULT NULL,
+  `last_checked_at` bigint(20) NOT NULL DEFAULT '0',
+  `last_success_at` bigint(20) DEFAULT NULL,
+  `last_failure_at` bigint(20) DEFAULT NULL,
+  `unhealthy_since` bigint(20) DEFAULT NULL,
+  `last_error` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`node_id`),
+  KEY `idx_node_health_status_time` (`status`,`last_checked_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='节点健康摘除状态';
 
 
 --

@@ -3,7 +3,11 @@
 require_once __DIR__ . '/../src/Utils/NodeConfigValidator.php';
 require_once __DIR__ . '/../src/Utils/AppURI.php';
 require_once __DIR__ . '/../src/Services/Config.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
+use App\Controllers\LinkController;
+use App\Models\Node;
+use App\Services\NodeHealthMonitor;
 use App\Utils\AppURI;
 use App\Utils\NodeConfigValidator;
 use App\Services\Config;
@@ -109,5 +113,26 @@ foreach ([$hysteria, $tuic, $anyTls, $vlessGrpc, $trojan] as $item) {
 }
 expect(AppURI::getSingBoxURI($vlessGrpc)['transport']['service_name'] === 'vless-grpc', 'sing-box VLESS gRPC output');
 expect(AppURI::getSingBoxURI($trojan)['transport']['service_name'] === 'trojan-grpc', 'sing-box Trojan gRPC output');
+
+$fancySS = LinkController::getSubscribeExtend('fancyss');
+expect($fancySS['class'] === 'FancySS' && $fancySS['suffix'] === 'yaml', 'FancySS subscription metadata');
+expect(
+    LinkController::isFancySSUserAgent('AsusWRT/koolcenter/RT-BE88U/102.5/fancyss/mtk/lite/3.5.29'),
+    'FancySS AsusWRT user agent detection'
+);
+expect(LinkController::detectSubscriptionOptions('Clash.Meta/1.19') === ['clashmeta' => 1], 'Clash Meta user agent detection');
+expect(LinkController::detectSubscriptionOptions('sing-box 1.14.0') === ['singbox' => 1], 'sing-box user agent detection');
+expect(LinkController::detectSubscriptionOptions('v2rayN/7.15.4') === ['sub' => 3], 'V2RayN user agent detection');
+expect(LinkController::subscriptionOptionsForProfile('mihomo') === ['clashmeta' => 1], 'Mihomo profile mapping');
+expect(LinkController::subscriptionOptionsForProfile('auto') === [], 'automatic profile mapping');
+expect(LinkController::subscriptionOptionsForProfile('unknown-client') === null, 'unknown profile rejection');
+$healthNode = new Node();
+$healthNode->id = 20;
+$healthNode->health_source_node_id = 3;
+expect($healthNode->getHealthSourceNodeId() === 3, 'copied node health source mapping');
+$healthNode->server = 'example.com;443;0;tcp;tls';
+expect(NodeHealthMonitor::endpoint($healthNode) === ['host' => 'example.com', 'port' => 443], 'node health endpoint parsing');
+$healthNode->server = ';443';
+expect(NodeHealthMonitor::endpoint($healthNode) === null, 'node health endpoint requires host');
 
 fwrite(STDOUT, "Protocol and configuration regression tests passed.\n");

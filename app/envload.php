@@ -26,4 +26,8 @@ if (getenv('UIM_ENV_REPLACE_ENABLE')) {
             }
         }
     }
+
+    if (getenv('UIM_BASEURL') !== false && getenv('UIM_SUBURL') === false) {
+        $_ENV['subUrl'] = rtrim($_ENV['baseUrl'], '/') . '/link/';
+    }
 }

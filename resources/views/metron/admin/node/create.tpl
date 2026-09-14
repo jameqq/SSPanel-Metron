@@ -83,6 +83,11 @@
                                             <p class="form-control-guide"><i class="material-icons">info</i>如果“节点地址”填写为域名，则此处的值会被忽视
                                             </p>
                                         </div>
+                                        <div class="form-group form-group-label">
+                                            <label class="floating-label" for="health_source_node_id">状态来源节点 ID</label>
+                                            <input class="form-control maxwidth-edit" id="health_source_node_id" name="health_source_node_id" type="number" min="0" value="0">
+                                            <p class="form-control-guide"><i class="material-icons">info</i>独立节点填 0；中转或入口节点填写实际运行 XrayRP 的源节点 ID。</p>
+                                        </div>
                                         <!--
                                         <div class="form-group form-group-label" hidden="hidden">
                                             <label class="floating-label" for="method">加密方式</label>
@@ -345,6 +350,7 @@
                     name: $$getValue('name'),
                     server: $$getValue('server'),
                     node_ip: $$getValue('node_ip'),
+                    health_source_node_id: $$getValue('health_source_node_id'),
                     method: $$getValue('method'),
                     port: $$getValue("port"),
                     obfs: $$getValue("obfs"),

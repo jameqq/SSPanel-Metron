@@ -9,7 +9,7 @@ use App\Services\{
 };
 use Slim\Http\Response;
 use Psr\Http\Message\ResponseInterface;
-use Smarty;
+use Smarty\Smarty;
 
 /**
  * BaseController

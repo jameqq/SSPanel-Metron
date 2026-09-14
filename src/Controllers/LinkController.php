@@ -4,7 +4,7 @@
 
 namespace App\Controllers;
 
-use App\Models\{Link, Node, User, UserSubscribeLog};
+use App\Models\{Link, Node, SubscriptionDevice, User, UserSubscribeLog};
 use App\Utils\{
     URL,
     Tools,
@@ -56,26 +56,56 @@ class LinkController extends BaseController
     public static function GetContent($request, $response, $args)
     {
         if (!$_ENV['Subscribe']) {
-            return null;
+            return $response->withJson(['ret' => 0, 'msg' => 'Subscription service is unavailable'], 503);
         }
 
         $token = $args['token'];
-
-        //$builder->getPhrase();
-        $Elink = Link::where('type', 11)->where('token', $token)->first();
-        if ($Elink == null) {
-            return null;
+        $device = SubscriptionDevice::where('token_hash', hash('sha256', $token))
+            ->whereNull('revoked_at')
+            ->first();
+        if ($device !== null && $device->expires_at !== null && (int) $device->expires_at < time()) {
+            return $response->withJson(['ret' => 0, 'msg' => 'Subscription device token has expired'], 410);
         }
-
-        $user = User::where('id', $Elink->userid)->first();
+        if ($device !== null) {
+            $user = User::where('id', $device->user_id)->first();
+            $device->last_access_at = time();
+            $device->last_access_ip = substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
+            $device->save();
+            if (!isset($args['profile']) || trim((string) $args['profile']) === '') {
+                $args['profile'] = $device->profile;
+            }
+        } else {
+            $Elink = Link::where('type', 11)->where('token', $token)->first();
+            if ($Elink === null) {
+                return $response->withJson(['ret' => 0, 'msg' => 'Subscription token was not found'], 404);
+            }
+            $user = User::where('id', $Elink->userid)->first();
+        }
         if ($user == null) {
-            return null;
+            return $response->withJson(['ret' => 0, 'msg' => 'Subscription user was not found'], 404);
         }
 
         $opts = $request->getQueryParams();
+        $known_types = self::subscriptionTypeKeys();
+        $profile = strtolower(trim((string) ($args['profile'] ?? '')));
+        if ($profile !== '') {
+            $profileOptions = self::subscriptionOptionsForProfile($profile);
+            if ($profileOptions === null) {
+                return $response->withJson([
+                    'ret' => 0,
+                    'msg' => 'Unsupported subscription profile',
+                ], 400);
+            }
+            foreach ($known_types as $knownType) {
+                unset($opts[$knownType]);
+            }
+            $opts = array_merge($opts, $profileOptions);
+        }
 
         // 订阅节点筛选(定制)
-        $nodeFilter = Metron::getNodeFilter($token);
+        $nodeFilter = $device !== null
+            ? Metron::getNodeFilter(null, $user)
+            : Metron::getNodeFilter($token);
         if ($nodeFilter != null) $Rule['nodefilter'] = $nodeFilter;
 
         // 筛选节点部分
@@ -148,14 +178,18 @@ class LinkController extends BaseController
         $subscribe_type = '';
 
         $getBody = '';
-        $user_agent = strtolower($_SERVER['HTTP_USER_AGENT']);
+        $user_agent = strtolower($request->getHeaderLine('User-Agent'));
+        if (count(array_intersect(array_keys($opts), $known_types)) === 0) {
+            $detectedOptions = self::detectSubscriptionOptions($user_agent);
+            $opts = array_merge($opts, $detectedOptions ?: ['sub' => 3]);
+        }
         if (isset($opts['clash'])) {
             if (strpos($user_agent, 'clashmeta') !==false) {
                 unset($opts['clash']);
                 $opts['clashmeta'] = 1;
             }
         }
-        $sub_type_array = ['list', 'ssd', 'clash', 'clashmeta' ,'surge', 'surfboard', 'anxray', 'quantumult', 'quantumultx', 'stash', 'sub', 'vless', 'singbox'];
+        $sub_type_array = $known_types;
         foreach ($sub_type_array as $key) {
             if (isset($opts[$key])) {
                 // 新增vless
@@ -176,6 +210,12 @@ class LinkController extends BaseController
 
                     $class = ('get' . $SubscribeExtend['class']);
                     $content = self::$class($user, $query_value, $opts, $Rule);
+                    if (trim((string) $content) === '') {
+                        return $response->withJson([
+                            'ret' => 0,
+                            'msg' => 'No compatible nodes are available for this subscription profile',
+                        ], 422);
+                    }
                     $getBody = self::getBody(
                         $user,
                         $response,
@@ -268,6 +308,13 @@ class LinkController extends BaseController
                     'filename' => 'sing-box',
                     'suffix' => 'json',
                     'class' => 'SingBox'
+                ];
+                break;
+            case 'fancyss':
+                $return = [
+                    'filename' => 'FancySS',
+                    'suffix' => 'yaml',
+                    'class' => 'FancySS'
                 ];
                 break;
             case 'surge':
@@ -418,22 +465,32 @@ class LinkController extends BaseController
      */
     public static function getBody($user, $response, $content, $filename): ResponseInterface
     {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $contentTypes = [
+            'json' => 'application/json; charset=utf-8',
+            'yaml' => 'text/yaml; charset=utf-8',
+            'yml' => 'text/yaml; charset=utf-8',
+            'conf' => 'text/plain; charset=utf-8',
+            'list' => 'text/plain; charset=utf-8',
+            'txt' => 'text/plain; charset=utf-8',
+        ];
         $response = $response
             ->withHeader(
                 'Content-type',
-                ' application/octet-stream; charset=utf-8'
+                $contentTypes[$extension] ?? 'application/octet-stream'
             )
             ->withHeader(
                 'Cache-Control',
-                'no-store, no-cache, must-revalidate'
+                'private, no-store, no-cache, must-revalidate'
             )
             ->withHeader(
                 'Content-Disposition',
-                ' attachment; filename=' . $filename
+                'attachment; filename="' . addcslashes($filename, '"\\') . '"'
             )
+            ->withHeader('Profile-Update-Interval', '24')
             ->withHeader(
                 'Subscription-Userinfo',
-                (' upload=' . $user->u
+                ('upload=' . $user->u
                     . '; download=' . $user->d
                     . '; total=' . $user->transfer_enable
                     . '; expire=' . strtotime($user->class_expire))
@@ -458,6 +515,7 @@ class LinkController extends BaseController
         $userapiUrl = $_ENV['subUrl'] . self::GenerateSSRSubCode($user->id, 0);
         $return_info = [
             'link' => '',
+            'auto' => '/auto',
             // sub
             'ss' => '?sub=2',
             'ssr' => '?sub=1',
@@ -472,6 +530,7 @@ class LinkController extends BaseController
             'ssd' => '?ssd=1',
             'anxray'=> '?anxray=1',
             'singbox' => '?singbox=1',
+            'fancyss' => '?fancyss=1',
             'clash' => '?clash=1',
             'clashmeta' => '?clashmeta=1',
             'clash_provider' => '?list=clash',
@@ -892,6 +951,89 @@ class LinkController extends BaseController
         return ConfController::getClashConfs($user, $Proxys, $_ENV['Clash_Profiles'][$Profiles]);
     }
 
+    /**
+     * FancySS 3.x can parse Clash/Mihomo subscriptions. ClashMeta keeps modern
+     * VLESS Reality, Hysteria2, TUIC and AnyTLS fields intact.
+     */
+    public static function getFancySS($user, $fancyss, $opts, $Rule)
+    {
+        $opts['clashmeta'] = 1;
+        return self::getClash($user, 1, $opts, $Rule);
+    }
+
+    public static function isFancySSUserAgent(string $userAgent): bool
+    {
+        return strpos(strtolower($userAgent), 'fancyss/') !== false;
+    }
+
+    public static function subscriptionTypeKeys(): array
+    {
+        return ['list', 'ssd', 'clash', 'clashmeta', 'surge', 'surfboard', 'anxray', 'quantumult', 'quantumultx', 'stash', 'sub', 'vless', 'singbox', 'fancyss'];
+    }
+
+    public static function subscriptionOptionsForProfile(string $profile): ?array
+    {
+        $profiles = [
+            'auto' => [],
+            'mihomo' => ['clashmeta' => 1],
+            'clashmeta' => ['clashmeta' => 1],
+            'clash-meta' => ['clashmeta' => 1],
+            'clash' => ['clash' => 1],
+            'fancyss' => ['fancyss' => 1],
+            'merlin' => ['fancyss' => 1],
+            'singbox' => ['singbox' => 1],
+            'sing-box' => ['singbox' => 1],
+            'v2ray' => ['sub' => 3],
+            'v2rayn' => ['sub' => 3],
+            'v2rayng' => ['sub' => 3],
+            'generic' => ['sub' => 3],
+            'vless' => ['sub' => 5],
+            'hysteria2' => ['sub' => 6],
+            'tuic' => ['sub' => 7],
+            'anytls' => ['sub' => 8],
+            'stash' => ['stash' => 1],
+            'surge' => ['surge' => 4],
+            'quantumultx' => ['quantumultx' => 1],
+            'shadowrocket' => ['list' => 'shadowrocket'],
+            'ss' => ['sub' => 2],
+            'ssr' => ['sub' => 1],
+        ];
+        return $profiles[$profile] ?? null;
+    }
+
+    public static function detectSubscriptionOptions(string $userAgent): ?array
+    {
+        $userAgent = strtolower($userAgent);
+        if (self::isFancySSUserAgent($userAgent)) {
+            return ['fancyss' => 1];
+        }
+        if (strpos($userAgent, 'sing-box') !== false || strpos($userAgent, 'singbox') !== false) {
+            return ['singbox' => 1];
+        }
+        if (strpos($userAgent, 'stash') !== false) {
+            return ['stash' => 1];
+        }
+        if (strpos($userAgent, 'surge') !== false) {
+            return ['surge' => 4];
+        }
+        if (strpos($userAgent, 'quantumult') !== false) {
+            return ['quantumultx' => 1];
+        }
+        if (strpos($userAgent, 'shadowrocket') !== false) {
+            return ['list' => 'shadowrocket'];
+        }
+        if (strpos($userAgent, 'mihomo') !== false || strpos($userAgent, 'clash.meta') !== false || strpos($userAgent, 'clashmeta') !== false) {
+            return ['clashmeta' => 1];
+        }
+        if (strpos($userAgent, 'clash') !== false) {
+            return ['clash' => 1];
+        }
+        if (strpos($userAgent, 'v2rayn') !== false || strpos($userAgent, 'v2rayng') !== false) {
+            return ['sub' => 3];
+        }
+        return null;
+    }
+
 
     public static function getSingBox($user, $ssd, $opts, $Rule)
     {
@@ -1053,6 +1195,9 @@ class LinkController extends BaseController
                 $return_url .= URL::get_NewAllUrl($user, $Rule);
                 $getListExtend = $Rule['extend'] ? self::getListExtend($user, 'ssr') : [];
                 break;
+        }
+        if ($return_url === '') {
+            return '';
         }
         if ($Rule['extend']) {
             $return_url .= implode(PHP_EOL, $getListExtend) . PHP_EOL;
