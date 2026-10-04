@@ -2,9 +2,13 @@
 
 require_once __DIR__ . '/../src/Utils/NodeConfigValidator.php';
 require_once __DIR__ . '/../src/Utils/AppURI.php';
+require_once __DIR__ . '/../src/Utils/Tools.php';
+require_once __DIR__ . '/../src/Utils/URL.php';
 
 use App\Utils\AppURI;
 use App\Utils\NodeConfigValidator;
+use App\Utils\Tools;
+use App\Utils\URL;
 
 function expect($condition, string $message): void
 {
@@ -97,5 +101,47 @@ foreach ([$hysteria, $tuic, $anyTls, $vlessGrpc, $trojan] as $item) {
 }
 expect(AppURI::getSingBoxURI($vlessGrpc)['transport']['service_name'] === 'vless-grpc', 'sing-box VLESS gRPC output');
 expect(AppURI::getSingBoxURI($trojan)['transport']['service_name'] === 'trojan-grpc', 'sing-box Trojan gRPC output');
+
+$encryption = 'mlkem768x25519plus.native.0rtt.test-key';
+$server = 'vless.example.com;21636;0;xhttp;tls;security=reality|host=vless.example.com|path=/assets|enable_vless=true|flow=xtls-rprx-vision|publicKey=public-key|shortId=01234567';
+$user = new class {
+    public function getUuid(): string { return '00000000-0000-4000-8000-000000000000'; }
+};
+$node = (object) ['server' => $server, 'name' => 'VLESS', 'node_class' => 0];
+foreach ([null, '', 'none', $encryption, 'mlkem768x25519plus.native.1rtt.key+suffix/='] as $value) {
+    $node->server = $server . ($value === null ? '' : '|encryption=' . $value);
+    $parsed = Tools::v2Array($node->server);
+    if ($value !== null) {
+        expect($parsed['encryption'] === $value, 'node address must preserve encryption');
+    }
+    $item = array_merge($vless, $parsed);
+    $expected = $value === null || $value === '' ? 'none' : $value;
+    $legacy = $item;
+    $legacy['type'] = 'vmess';
+    $legacy['vtype'] = 'vless://';
+    $vmess = $legacy;
+    $vmess['vtype'] = 'vmess://';
+    $vmessJson = json_decode(base64_decode(substr(AppURI::getV2RayNURI($vmess), 8)), true);
+    expect($vmessJson['id'] === $item['id'] && !isset($vmessJson['encryption']), 'VMess output must remain unchanged');
+    foreach ([AppURI::getV2RayNURI($item), AppURI::getV2RayNURI($legacy), AppURI::getShadowrocketURI($item), AppURI::getAnXrayURI($legacy), URL::getV2UrlVLESS($user, $node)] as $uri) {
+        parse_str(parse_url($uri, PHP_URL_QUERY), $query);
+        expect($query['encryption'] === $expected, 'VLESS URI encryption must round-trip without truncation');
+        expect($query['path'] === '/assets', 'VLESS path must be preserved');
+        expect($query['flow'] === 'xtls-rprx-vision', 'VLESS Vision flow must be preserved');
+    }
+    expect(URL::getV2UrlVLESS($user, $node, true) === array_merge($parsed, [
+        'v' => '2', 'type' => 'vless', 'ps' => 'VLESS', 'remark' => 'VLESS',
+        'id' => $user->getUuid(), 'class' => 0,
+    ]), 'array output must preserve encryption');
+    $mihomo = AppURI::getClashMetaURI($item);
+    if ($expected === 'none') {
+        expect(!isset($mihomo['encryption']), 'unencrypted Mihomo nodes retain existing output');
+    } else {
+        expect($mihomo['encryption'] === $expected, 'Mihomo encryption must be emitted');
+    }
+    $item['net'] = 'grpc';
+    $item['servicename'] = 'vless-grpc';
+    expect((AppURI::getSingBoxURI($item) === null) === ($expected !== 'none'), 'sing-box must filter encrypted nodes');
+}
 
 fwrite(STDOUT, "Protocol and configuration regression tests passed.\n");

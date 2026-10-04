@@ -183,3 +183,15 @@ syncnas
 执行周期：每月 1 日 0 小时 0 分钟
 脚本内容：php /www/wwwroot/你的网站目录/xcat FinanceMail month
 ```
+
+### VLESS Encryption 订阅
+
+在 V2Ray / VLESS 节点地址的参数部分添加客户端加密字符串：
+
+```text
+vless.example.com;21636;0;xhttp;tls;security=reality|host=sni.example.com|path=/assets|enable_vless=true|flow=xtls-rprx-vision|publicKey=REALITY_PUBLIC_KEY|shortId=01234567|encryption=CLIENT_ENCRYPTION_STRING
+```
+
+`CLIENT_ENCRYPTION_STRING` 使用 `xray vlessenc` 生成的客户端 `encryption`，不要填写服务端 `decryption` 或 REALITY 私钥。服务端需配置同一组生成结果中的 `VlessDecryption`。
+
+VLESS 链接订阅和节点链接会下发 `encryption`；Mihomo 订阅会输出对应的 `encryption` 字段。客户端需要支持所选加密模式。省略参数、留空或填写 `none` 时保持原有未加密行为。sing-box 订阅会过滤启用 VLESS Encryption 的节点，避免下发缺少加密参数的不可用配置。
