@@ -518,7 +518,7 @@ class URL
         $item['id'] = $user->getUuid();
         $item['class'] = $node->node_class;
         $node = 'vless://' . $item['id'] . '@' . $item['add'] .':'. $item['port']
-            . '?encryption=none&type=' . $item['net'] . '&headerType=none';
+            . '?encryption=' . rawurlencode(!empty($item['encryption']) ? $item['encryption'] : 'none') . '&type=' . $item['net'] . '&headerType=none';
         if (isset($item['host']) && $item['host']){
             $node .= '&host='.$item['host'];
             $node .= '&sni=' . $item['host'];
