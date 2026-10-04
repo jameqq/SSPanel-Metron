@@ -73,7 +73,7 @@ public static function getV2RayNURI(array $item)
                 ];
                 $return = 'vmess://' . base64_encode(json_encode($node, 320));
             } else {
-                $return = 'vless://' . $item['id'] . "@" . (string)$item['add'] . ":" . $item['port'] . "?encryption=none";
+                $return = 'vless://' . $item['id'] . "@" . (string)$item['add'] . ":" . $item['port'] . "?encryption=" . rawurlencode(!empty($item['encryption']) ? $item['encryption'] : 'none');
                 $return .= "&type=" . $item['net'];
 
                 if ($item['tls'] == "tls") {
@@ -107,7 +107,7 @@ public static function getV2RayNURI(array $item)
 
         case 'vless':
             $node = 'vless://' . $item['id'] . '@' . $item['add'] . ':' . $item['port']
-                . '?encryption=none&type=' . $item['net'] . '&headerType=none';
+                . '?encryption=' . rawurlencode(!empty($item['encryption']) ? $item['encryption'] : 'none') . '&type=' . $item['net'] . '&headerType=none';
 
             if (isset($item['host']) && $item['host']) {
                 $node .= '&host=' . $item['host'];
@@ -688,6 +688,10 @@ public static function getV2RayNURI(array $item)
                     'udp' => true
                 ];
 
+                if (!empty($item['encryption']) && $item['encryption'] !== 'none') {
+                    $return['encryption'] = $item['encryption'];
+                }
+
                 if ($item['tls'] == 'tls') {
                     $return['tls'] = true;
                     $return['servername'] = isset($item['sni']) ? $item['sni'] : $item['host'];
@@ -860,7 +864,7 @@ public static function getV2RayNURI(array $item)
 
             case 'vless':
                 $node = 'vless://' . $item['id'] . '@' . $item['add'] . ':' . $item['port']
-                    . '?encryption=none&type=' . $item['net'] . '&headerType=none';
+                    . '?encryption=' . rawurlencode(!empty($item['encryption']) ? $item['encryption'] : 'none') . '&type=' . $item['net'] . '&headerType=none';
                 if (isset($item['host']) && $item['host']) {
                     $node .= '&host=' . $item['host'];
                     $node .= '&sni=' . $item['host'];
@@ -1078,6 +1082,10 @@ public static function getTrojanURI(array $item)
                 return 'ssr://' . Tools::base64_url_encode($return);
                 break;
             case 'vmess':
+                if ($item['vtype'] === 'vless://') {
+                    $item['type'] = 'vless';
+                    return self::getV2RayNURI($item);
+                }
                 $return = $item['vtype'] . $item['id'] . "@" . $item['add'] . ":" . $item['port'] . "?encryption=none";
                 $return .= "&type=" . $item['net'];
                 $return .= "&security=" . $item['tls'];
@@ -1190,8 +1198,8 @@ public static function getTrojanURI(array $item)
                 }
                 break;
             case 'vless':
-                // sing-box does not implement Xray's xHTTP transport.
-                if ($item['net'] === 'xhttp') {
+                // sing-box does not implement Xray's xHTTP transport or VLESS encryption.
+                if ($item['net'] === 'xhttp' || (!empty($item['encryption']) && $item['encryption'] !== 'none')) {
                     break;
                 }
                 $return = [
